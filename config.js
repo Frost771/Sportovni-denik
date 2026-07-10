@@ -7,3 +7,4 @@ import "./quick-entry.js";
 // Volitelné rozšířené brankářské statistiky – stabilní verze bez observer smyčky.
 import "./goalkeeper-stats-v2.js";
 
+export const SUPABASE_URL = "https://hekqktf
