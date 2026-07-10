@@ -4,8 +4,6 @@
 import "./form-fix.js";
 // Rychlé šablony a zopakování posledního záznamu.
 import "./quick-entry.js";
-// Volitelné rozšířené brankářské statistiky.
-import "./goalkeeper-stats.js";
+// Volitelné rozšířené brankářské statistiky – stabilní verze bez observer smyčky.
+import "./goalkeeper-stats-v2.js";
 
-export const SUPABASE_URL = "https://hekqktfhtvkzxjyslnde.supabase.co";
-export const SUP
