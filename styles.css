@@ -121,9 +121,7 @@ button:disabled { opacity: .55; cursor: wait; }
 .small { font-size: .86rem; }
 
 .nav-tabs {
-  position: sticky;
-  top: 8px;
-  z-index: 20;
+  position: static;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
@@ -131,15 +129,14 @@ button:disabled { opacity: .55; cursor: wait; }
   margin-bottom: 22px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(12px);
+  background: white;
   box-shadow: 0 8px 24px rgba(31, 52, 90, .08);
 }
 .nav-tabs button { color: var(--muted); background: transparent; }
 .nav-tabs button.active { color: white; background: var(--blue); }
 
 .page { display: none; }
-.page.active { display: block; }
+.page.active { display: block; position: relative; z-index: 1; }
 .section-heading {
   display: flex;
   justify-content: space-between;
@@ -210,7 +207,23 @@ button:disabled { opacity: .55; cursor: wait; }
 .transfer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .transfer-grid h3 { margin-top: 0; }
 
-.records-list { display: grid; gap: 10px; }
+#page-entry,
+#entry-form,
+#entry-form label,
+#entry-form input,
+#entry-form select,
+#entry-form textarea,
+#entry-form button {
+  position: relative;
+  pointer-events: auto !important;
+}
+
+#entry-form {
+  z-index: 5;
+  isolation: isolate;
+}
+
+.records-list { display: grid; gap: 10px; position: relative; z-index: 2; }
 .record-card {
   display: grid;
   grid-template-columns: 110px 1fr auto;
@@ -220,11 +233,13 @@ button:disabled { opacity: .55; cursor: wait; }
   border: 1px solid var(--line);
   border-radius: 17px;
   background: white;
+  position: relative;
 }
 .record-date { color: var(--blue); font-weight: 900; }
 .record-main h3 { margin: 0 0 5px; font-size: 1rem; }
 .record-main p { margin: 2px 0; color: var(--muted); line-height: 1.45; }
-.record-actions { display: flex; gap: 7px; }
+.record-actions { display: flex; gap: 7px; position: relative; z-index: 5; pointer-events: auto !important; }
+.record-actions button { position: relative; pointer-events: auto !important; }
 .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
 .badge {
   display: inline-flex;
@@ -284,7 +299,6 @@ button:disabled { opacity: .55; cursor: wait; }
   .topbar { align-items: flex-start; }
   .topbar-actions { display: grid; justify-items: end; }
   .nav-tabs {
-    top: 5px;
     grid-template-columns: repeat(5, minmax(74px, 1fr));
     overflow-x: auto;
   }
@@ -300,6 +314,15 @@ button:disabled { opacity: .55; cursor: wait; }
   .record-card { grid-template-columns: 1fr; }
   .record-actions { justify-content: flex-end; }
   .compact-form { grid-template-columns: 1fr; }
+  #entry-form input,
+  #entry-form select,
+  #entry-form textarea {
+    min-height: 46px;
+    font-size: 16px;
+    touch-action: manipulation;
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 @media (max-width: 390px) {
