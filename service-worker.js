@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v2-mobile-fix";
+const CACHE = "sportovni-denik-v3-form-fix";
 
 const ASSETS = [
   "./",
@@ -11,40 +11,55 @@ const ASSETS = [
   "./icons/icon-512.png"
 ];
 
-// iOS Safari může u kombinace sticky navigace, backdrop-filteru a
-// horizontálního overflow vytvořit neviditelnou dotykovou vrstvu přes formulář.
-// Tato mobilní oprava navigaci na úzké obrazovce odlepí a výslovně povolí
-// dotykové ovládání formulářových prvků.
-const MOBILE_FORM_FIX = `
+// Oprava případné neviditelné překryvné vrstvy nad formulářem.
+// Platí na PC i telefonu, nikoli jen na úzkých obrazovkách.
+const FORM_FIX = `
+.nav-tabs {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#app-view,
+.page.active,
+#page-entry,
+#entry-form {
+  position: relative;
+}
+
+#page-entry,
+#entry-form {
+  z-index: 50 !important;
+  pointer-events: auto !important;
+  isolation: isolate;
+}
+
+#entry-form label,
+#entry-form input,
+#entry-form select,
+#entry-form textarea,
+#entry-form button {
+  position: relative;
+  z-index: 51 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+
+#entry-form input,
+#entry-form select,
+#entry-form textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
 @media (max-width: 650px) {
-  .nav-tabs {
-    position: static !important;
-    top: auto !important;
-    z-index: auto !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  #page-entry,
-  #entry-form,
-  #entry-form label,
-  #entry-form input,
-  #entry-form select,
-  #entry-form textarea,
-  #entry-form button {
-    position: relative;
-    pointer-events: auto !important;
-    touch-action: manipulation;
-  }
-
   #entry-form input,
   #entry-form select,
   #entry-form textarea {
-    z-index: 2;
     min-height: 46px;
     font-size: 16px;
-    -webkit-user-select: text;
-    user-select: text;
   }
 }
 `;
@@ -67,7 +82,7 @@ async function fetchPatchedStyles(request) {
   try {
     const response = await fetch(request, { cache: "no-store" });
     const originalCss = await response.text();
-    const patchedResponse = new Response(`${originalCss}\n${MOBILE_FORM_FIX}`, {
+    const patchedResponse = new Response(`${originalCss}\n${FORM_FIX}`, {
       status: response.status,
       statusText: response.statusText,
       headers: {
