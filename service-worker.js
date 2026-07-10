@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v3-form-fix";
+const CACHE = "sportovni-denik-v4-reset-fix";
 
 const ASSETS = [
   "./",
@@ -11,8 +11,6 @@ const ASSETS = [
   "./icons/icon-512.png"
 ];
 
-// Oprava případné neviditelné překryvné vrstvy nad formulářem.
-// Platí na PC i telefonu, nikoli jen na úzkých obrazovkách.
 const FORM_FIX = `
 .nav-tabs {
   position: static !important;
@@ -99,12 +97,42 @@ async function fetchPatchedStyles(request) {
   }
 }
 
+async function fetchPatchedApp(request) {
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+    const originalJs = await response.text();
+    const brokenLine = '  $("#entry-form").addEventListener("reset", () => setTimeout(resetEntryForm));';
+    const fixedLine = '  $("#entry-form").addEventListener("reset", () => {\n    setTimeout(() => {\n      if (!state.editingId) {\n        setValue("#event-type", "Trénink");\n        setValue("#sport", "Florbal");\n        setValue("#event-date", isoToday());\n        setValue("#match-type", "Soutěžní");\n        setValue("#decision", "Základní doba");\n        setValue("#role", "Brankář");\n        updateEntryFormVisibility();\n      }\n    }, 0);\n  });';
+    const patchedJs = originalJs.replace(brokenLine, fixedLine);
+
+    const patchedResponse = new Response(patchedJs, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        "Content-Type": "text/javascript; charset=utf-8",
+        "Cache-Control": "no-cache"
+      }
+    });
+
+    const cache = await caches.open(CACHE);
+    await cache.put(request, patchedResponse.clone());
+    return patchedResponse;
+  } catch (_error) {
+    return (await caches.match(request)) || Response.error();
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
   if (url.pathname.endsWith("/styles.css")) {
     event.respondWith(fetchPatchedStyles(event.request));
+    return;
+  }
+
+  if (url.pathname.endsWith("/app.js")) {
+    event.respondWith(fetchPatchedApp(event.request));
     return;
   }
 
