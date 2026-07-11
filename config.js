@@ -9,6 +9,7 @@ import "./season-review-flicker-fix.js";
 import "./surface-flicker-fix.js";
 import "./structured-notes.js";
 import "./records-search.js";
+import "./season-report.js";
 
 export const SUPABASE_URL = "https://hekqktfhtvkzxjyslnde.supabase.co";
 export const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6KGafi-gkmj3KCkdBLM97Q_g1-WZjg3";
