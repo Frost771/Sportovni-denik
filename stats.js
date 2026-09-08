@@ -38,6 +38,14 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = "stats-module-styles";
   style.textContent = `
+    #season-comparison { margin-top: 28px; }
+    .comparison-scroll { overflow-x: auto; }
+    .comparison-table { width: 100%; border-collapse: collapse; min-width: 510px; }
+    .comparison-table th, .comparison-table td { text-align: right; padding: 10px; border-bottom: 1px solid var(--line); }
+    .comparison-table th:first-child { text-align: left; }
+    .comparison-graphs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 18px; }
+    .comparison-bar { height: 12px; background: var(--blue); border-radius: 4px; margin: 5px 0 12px; }
+    .comparison-bar.second { background: #b47bea; }
     .nav-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
     #stats-kit { margin-bottom: 24px; }
     .kit-usage { margin-top: 18px; display: grid; gap: 8px; }
@@ -143,7 +151,19 @@ function injectUi() {
       </article>
     </div>
   `;
+  section.insertAdjacentHTML("beforeend", `
+    <section id="season-comparison">
+      <h2>Porovnání sezón</h2>
+      <p class="muted small">Sport se řídí výběrem nahoře. A a B označují sezóny; rozdíl je B − A.</p>
+      <div class="inline-filters">
+        <label>Sezóna A<select id="compare-a"></select></label>
+        <label>Sezóna B<select id="compare-b"></select></label>
+      </div>
+      <p class="muted small">Počty u rozehrané sezóny zatím nejsou konečné. Porovnávej také průměry a podíly. Zahrnuty jsou všechny typy zápasů.</p>
+      <div id="comparison-content"></div>
+    </section>`);
   dashboardPage.insertAdjacentElement("afterend", section);
+  ["#compare-a", "#compare-b"].forEach(id => $stats(id).addEventListener("change", renderSeasonComparison));
 
   button.addEventListener("click", loadAndRenderStats);
   $stats("#stats-sport").addEventListener("change", () => {
@@ -235,6 +255,8 @@ function renderResults(matches) {
 }
 
 function renderStats() {
+  refreshComparisonSelectors();
+  renderSeasonComparison();
   const sport = $stats("#stats-sport")?.value;
   const season = $stats("#stats-season")?.value;
   if (!sport || !season) {
@@ -373,4 +395,68 @@ function renderKitStats(matches) {
       '<p class="muted small">Neuvedeno: ' + missing + ' ' + (missing === 1 ? 'zápas' : missing >= 2 && missing <= 4 ? 'zápasy' : 'zápasů') + '</p>' + chart + '</div>';
   });
   $stats("#stats-kit").innerHTML = cards.join("");
+}
+
+function comparisonSummary(entries, sport, season) {
+  const selected = entries.filter(e => e.sport === sport && e.season === season);
+  const matches = selected.filter(e => e.event_type === "Zápas");
+  const training = selected.filter(e => e.event_type === "Trénink");
+  const keepers = matches.filter(e => (e.role || "Brankář") === "Brankář" && e.minutes_played > 0 && Number.isFinite(e.goals_conceded));
+  const clean = keepers.filter(e => e.goals_conceded === 0).length;
+  const wins = matches.filter(e => e.result?.startsWith("Výhra")).length;
+  return {
+    matches: matches.length, wins,
+    draws: matches.filter(e => e.result === "Remíza").length,
+    losses: matches.filter(e => e.result?.startsWith("Prohra")).length,
+    winRate: matches.length ? wins / matches.length * 100 : null,
+    keepers: keepers.length, clean,
+    cleanRate: keepers.length ? clean / keepers.length * 100 : null,
+    conceded: average(keepers.map(e => e.goals_conceded)),
+    rating: average(matches.map(e => e.rating)),
+    training: training.length,
+    hours: training.reduce((sum,e) => sum + (e.duration_minutes || 0),0) / 60
+  };
+}
+function refreshComparisonSelectors() {
+  const available = seasonsForSport($stats("#stats-sport").value);
+  ["#compare-a", "#compare-b"].forEach((id, index) => {
+    const select = $stats(id);
+    const previous = select.value;
+    const sport = $stats("#stats-sport").value;
+    const preserve = select.dataset.sport === sport && available.some(s => s.season === previous);
+    select.innerHTML = available.map(s => '<option value="' + safeText(s.season) + '">' + safeText(s.season) + (s.status === "Aktivní" ? " – rozehraná" : " – uzavřená") + '</option>').join("");
+    select.value = preserve ? previous : (available[index === 0 ? Math.min(1,available.length-1) : 0]?.season || "");
+    select.dataset.sport = sport;
+    select.disabled = available.length < 2;
+  });
+}
+function renderSeasonComparison() {
+  const container = $stats("#comparison-content");
+  const sport = $stats("#stats-sport").value;
+  const a = $stats("#compare-a").value, b = $stats("#compare-b").value;
+  if (seasonsForSport(sport).length < 2) {
+    container.innerHTML = '<p class="empty">Pro porovnání potřebuješ alespoň dvě sezóny stejného sportu.</p>';
+    return;
+  }
+  if (a === b) { container.innerHTML = '<p class="empty">Vyber dvě různé sezóny.</p>'; return; }
+  const left = comparisonSummary(statsState.entries,sport,a), right = comparisonSummary(statsState.entries,sport,b);
+  const metrics = [
+    ["matches","Zápasy",0,""],["wins","Výhry",0,""],["draws","Remízy",0,""],["losses","Prohry",0,""],
+    ["winRate","Podíl výher",1,"%"],["keepers","Brankářské zápasy s údaji",0,""],
+    ["clean","Čistá konta",0,""],["cleanRate","Podíl čistých kont",1,"%"],
+    ["conceded","Inkasované góly / brankářský zápas",2,""],
+    ["rating","Průměrné hodnocení",2,"/10"],["training","Tréninky",0,""],["hours","Tréninkový čas",1,"h"]
+  ];
+  const format = (value, digits, unit) => value === null ? "—" : value.toLocaleString("cs-CZ",{minimumFractionDigits:digits,maximumFractionDigits:digits}) + (unit ? " " + unit : "");
+  const rows = metrics.map(([key,label,digits,unit]) => {
+    const diff = left[key] === null || right[key] === null ? null : right[key]-left[key];
+    return '<tr><th scope="row">' + label + '</th><td>' + format(left[key],digits,unit) + '</td><td>' + format(right[key],digits,unit) + '</td><td>' + (diff > 0 ? "+" : "") + format(diff,digits,unit === "%" ? "p. b." : unit) + '</td></tr>';
+  }).join("");
+  const graphs = metrics.filter(([key]) => ["matches","winRate","cleanRate","conceded","rating","hours"].includes(key)).map(([key,label,digits,unit]) => {
+    const max = Math.max(left[key] || 0, right[key] || 0, 1);
+    return '<article class="detail-card"><h3>' + label + '</h3>' + [[left,a,""],[right,b," second"]].map(([summary,name,cls]) =>
+      '<div>' + safeText(name) + ': <strong>' + format(summary[key],digits,unit) + '</strong></div><div class="comparison-bar' + cls + '" style="width:' + ((summary[key] || 0)/max*100) + '%"></div>'
+    ).join("") + '</article>';
+  }).join("");
+  container.innerHTML = '<div class="card comparison-scroll"><table class="comparison-table"><caption>Porovnání ' + safeText(sport) + '</caption><thead><tr><th>Ukazatel</th><th>A: ' + safeText(a) + '</th><th>B: ' + safeText(b) + '</th><th>Rozdíl B − A</th></tr></thead><tbody>' + rows + '</tbody></table></div><p class="muted small">Brankářské ukazatele zahrnují jen zápasy s odehranými minutami a vyplněnými inkasovanými góly. Chybějící průměr je označen pomlčkou. Menší průměr inkasovaných znamená méně obdržených gólů.</p><div class="comparison-graphs">' + graphs + '</div>';
 }
