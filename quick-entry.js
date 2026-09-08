@@ -84,7 +84,7 @@ function clearEntryValues() {
   [
     "#training-type", "#duration-minutes", "#intensity", "#opponent",
     "#goals-for", "#goals-against", "#minutes-played", "#goals-conceded",
-    "#rating", "#notes", "#entry-id",
+    "#rating", "#notes", "#entry-id", "#jersey-color", "#shorts-color", "#socks-color",
   ].forEach((selector) => setField(selector, ""));
 
   setField("#match-type", "Soutěžní");
@@ -141,6 +141,9 @@ function fillRepeatedEntry(entry) {
   setField("#goals-conceded", entry.goals_conceded);
   setField("#rating", entry.rating);
   setField("#notes", "");
+  setField("#jersey-color", entry.jersey_color);
+  setField("#shorts-color", entry.shorts_color);
+  setField("#socks-color", entry.socks_color);
   dispatchChange("#role");
   dispatchChange("#decision");
   dispatchChange("#goals-for");
