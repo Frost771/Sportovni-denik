@@ -515,7 +515,7 @@ function renderRecords() {
       <div class="record-main">
         <h3>${safeText(title)}</h3>
         <p>${safeText(description)}</p>
-        ${kitSummary(entry) ? `<p>${safeText(kitSummary(entry))}</p>` : ""}
+        ${kitSummary(entry) ? `<div class="record-kit"><strong>Výstroj</strong><div>${safeText(kitSummary(entry))}</div></div>` : ""}
         ${entry.notes ? `<p>${safeText(entry.notes)}</p>` : ""}
         <div class="badges">${badges.map((badge) => `<span class="badge">${safeText(badge)}</span>`).join("")}</div>
       </div>
