@@ -438,11 +438,11 @@ function refreshComparisonSelectors() {
 }
 function comparisonDelta(key, left, right, digits) {
   if (!Number.isFinite(left) || !Number.isFinite(right)) return { value: null, tone: "neutral", arrow: "—", label: "Chybí údaje" };
+  const direction = { winRate: 1, cleanRate: 1, rating: 1, conceded: -1 }[key];
   const value = Number((right - left).toFixed(digits)) || 0;
-  if (value === 0) return { value, tone: "neutral", arrow: "→", label: "Beze změny" };
-  const direction = { wins: 1, winRate: 1, clean: 1, cleanRate: 1, rating: 1, losses: -1, conceded: -1 }[key];
+  if (value === 0) return { value, tone: "neutral", arrow: "→", label: direction ? "Beze změny" : "Stejně" };
   const arrow = value > 0 ? "↑" : "↓";
-  if (!direction) return { value, tone: "neutral", arrow, label: value > 0 ? "Nárůst" : "Pokles" };
+  if (!direction) return { value, tone: "neutral", arrow, label: value > 0 ? "Více" : "Méně" };
   const better = value * direction > 0;
   return { value, tone: better ? "better" : "worse", arrow, label: better ? "Zlepšení" : "Zhoršení" };
 }
