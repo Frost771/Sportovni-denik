@@ -354,11 +354,11 @@ function renderKitStats(matches) {
         const wins = used.filter(entry => entry.result?.startsWith("Výhra")).length;
         const clean = used.filter(entry => entry.minutes_played > 0 && entry.goals_conceded === 0).length;
         return '<div class="stat-line"><span>' + label + '</span><strong>' + used.length +
-          '× · ' + wins + ' V · ' + clean + ' nul</strong></div>';
+          '× · ' + wins + ' V · ' + clean + ' ' + (clean === 1 ? 'čisté konto' : clean >= 2 && clean <= 4 ? 'čistá konta' : 'čistých kont') + '</strong></div>';
       }).join("");
     const missing = eligible.filter(entry => !entry[field]).length;
     return '<div class="detail-card"><h3>Výstroj · ' + labels[field] + '</h3>' + rows +
-      '<p class="muted small">Neuvedeno: ' + missing + ' zápasů</p></div>';
+      '<p class="muted small">Neuvedeno: ' + missing + ' ' + (missing === 1 ? 'zápas' : missing >= 2 && missing <= 4 ? 'zápasy' : 'zápasů') + '</p></div>';
   });
   $stats("#stats-kit").innerHTML = cards.join("");
 }
