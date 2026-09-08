@@ -328,3 +328,36 @@ button:disabled { opacity: .55; cursor: wait; }
 @media (max-width: 390px) {
   .season-strip, .stats-grid { grid-template-columns: 1fr; }
 }
+
+.theme-toolbar { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+:root[data-theme="dark"] {
+  --page: #101827; --surface: #192438; --ink: #e8edf7; --muted: #b4c0d4;
+  --line: #34435b; --blue: #73a9ff; --blue-dark: #a9c9ff; --blue-soft: #263d60;
+  --danger: #ffaaa3; --success: #80dcb0; --shadow: 0 12px 32px #0003;
+}
+:root[data-theme="dark"] :is(input, select, textarea, .nav-tabs, .stat-card, .detail-card, .record-card, .stats-chart-card, .quick-template-button, .card) {
+  background: var(--surface); color: var(--ink); border-color: var(--line);
+}
+:root[data-theme="dark"] :is(.structured-notes-fields, .structured-notes-summary, .gk-record-summary, .empty) {
+  background: #202f46; color: var(--ink); border-color: var(--line);
+}
+:root[data-theme="dark"] :is(.stats-chart-track, .stats-result-track, .kit-usage-track) { background: #2b3a51; }
+:root[data-theme="dark"] .stat-line { border-color: var(--line); }
+:root[data-theme="dark"] :is(.brand-panel, .season-pill) { background: linear-gradient(135deg, #183869, #20529a); }
+:root[data-theme="dark"] :is(button.primary, .nav-tabs button.active) { background: #285eb3; color: white; }
+:root[data-theme="dark"] button.primary:hover { background: #3473d4; }
+:root[data-theme="dark"] button.danger { background: #482929; }
+:root[data-theme="dark"] .badge.gray { background: #344153; color: #dce5f4; }
+:root[data-theme="dark"] .badge.green { background: #163e32; }
+:root[data-theme="dark"] :is(.warning, .surface-schema-warning, .structured-notes-schema-warning, .season-review-schema-warning) { background: #45391d; color: #ffe1a1; border-color: #786331; }
+:root[data-theme="dark"] .toast { background: #dbe7fa; color: #172033; }
+:root[data-theme="dark"] .toast.error { background: #8b2929; color: white; }
+:root[data-theme="dark"] input::placeholder, :root[data-theme="dark"] textarea::placeholder { color: #95a5bd; }
+
+:root[data-theme="dark"] :is(.records-search-panel, .season-report-hero, .season-report-card, .season-report-chart-card, .season-report-review, .gk-stats-percentage) { background: var(--surface); color: var(--ink); border-color: var(--line); }
+:root[data-theme="dark"] .gk-stats-wrapper { background: #202f46; border-color: var(--line); }
+:root[data-theme="dark"] :is(.season-report-chart-track, .season-report-result-track, .season-report-list-badge) { background: #2b3a51; }
+:root[data-theme="dark"] .season-report-stat-line { border-color: var(--line); }
+:root[data-theme="dark"] .season-report-status.active { background: #163e32; color: #80dcb0; }
+:root[data-theme="dark"] .season-report-status.closed { background: #344153; color: #dce5f4; }
+:root[data-theme="dark"] .gk-schema-warning { background: #45391d; color: #ffe1a1; }
