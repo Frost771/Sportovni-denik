@@ -26,7 +26,8 @@ function showSurfaceToast(message, type = "ok") {
 }
 
 function currentSurface() {
-  return $surface("#surface")?.value?.trim() || null;
+  const selected = $surface("#surface")?.value?.trim();
+  return selected === "Jiné" ? ($surface("#surface-other")?.value?.trim() || "Jiné") : selected || null;
 }
 
 function updateSurfaceOptions(preferredValue = null) {
@@ -41,7 +42,15 @@ function updateSurfaceOptions(preferredValue = null) {
     `<option value="">Nevybráno</option>` +
     options.map((surface) => `<option value="${surface}">${surface}</option>`).join("");
 
-  select.value = options.includes(current) ? current : "";
+  const isCustom = !!current && !options.includes(current);
+  select.value = isCustom ? "Jiné" : current || "";
+  const other = $surface("#surface-other");
+  if (other) {
+    if (isCustom) other.value = current;
+    else if (current !== "Jiné") other.value = "";
+    $surface("#surface-other-label")?.classList.toggle("hidden", select.value !== "Jiné");
+    other.required = select.value === "Jiné";
+  }
 }
 
 function clearSurface() {
@@ -66,7 +75,7 @@ function installFetchPatch() {
 
       if (isEntryWrite && typeof init?.body === "string") {
         const parsedBody = JSON.parse(init.body);
-        const addSurface = (row) => ({ ...row, surface: currentSurface() });
+        const addSurface = (row) => ({ ...row, surface: Object.hasOwn(row, "surface") ? row.surface : currentSurface() });
 
         nextInit = {
           ...init,
