@@ -2,6 +2,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import Papa from "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./config.js";
 
+import { KIT_FIELDS, kitFields, normalizeKit, kitSummary, populateKitOptions } from "./kit.js";
+
 const configured =
   SUPABASE_URL &&
   SUPABASE_PUBLISHABLE_KEY &&
@@ -31,6 +33,7 @@ const ENTRY_CSV_HEADERS = [
   "typ_zapasu", "role", "delka_minuty", "narocnost", "souper", "misto",
   "nase_goly", "goly_soupere", "odehrane_minuty", "inkasovane",
   "hodnoceni", "rozhodnuti", "vysledek", "body", "poznamka",
+  "dres_barva", "trenky_barva", "stulpny_barva",
 ];
 
 const SEASON_CSV_HEADERS = [
@@ -211,6 +214,14 @@ function updateEntryFormVisibility() {
   $("#decision-label").classList.toggle("hidden", sport !== "Florbal");
   $("#conceded-label").classList.toggle("hidden", sport === "Fotbal" && role === "Hráč v poli");
 
+  const visibleKitFields = kitFields({ event_type: eventType, sport, role });
+  $("#kit-fields").classList.toggle("hidden", !visibleKitFields.length);
+  for (const field of KIT_FIELDS) {
+    const select = $("#" + field.replaceAll("_", "-"));
+    select.disabled = !visibleKitFields.includes(field);
+    select.closest("label").classList.toggle("hidden", select.disabled);
+  }
+
   const needsWinner =
     eventType === "Zápas" &&
     sport === "Florbal" &&
@@ -227,7 +238,9 @@ function updateEntryFormVisibility() {
 
 function resetEntryForm() {
   state.editingId = null;
+  resetEntryForm.running = true;
   $("#entry-form").reset();
+  resetEntryForm.running = false;
   setValue("#event-type", "Trénink");
   setValue("#sport", "Florbal");
   setValue("#event-date", isoToday());
@@ -268,6 +281,8 @@ function buildEntryPayload() {
     result: null,
     points: null,
     notes: value("#notes").trim() || null,
+    ...normalizeKit({ event_type: eventType, sport, role: value("#role"),
+      ...Object.fromEntries(KIT_FIELDS.map(field => [field, value("#" + field.replaceAll("_", "-"))])) }),
   };
 
   if (eventType === "Trénink") {
@@ -371,6 +386,7 @@ function editEntry(id) {
   setValue("#goals-conceded", entry.goals_conceded);
   setValue("#rating", entry.rating);
   setValue("#notes", entry.notes);
+  for (const field of KIT_FIELDS) setValue("#" + field.replaceAll("_", "-"), entry[field]);
   $("#entry-heading").textContent = "Upravit záznam";
   $("#save-entry-btn").textContent = "Uložit změny";
   $("#cancel-edit-btn").classList.remove("hidden");
@@ -499,6 +515,7 @@ function renderRecords() {
       <div class="record-main">
         <h3>${safeText(title)}</h3>
         <p>${safeText(description)}</p>
+        ${kitSummary(entry) ? `<p>${safeText(kitSummary(entry))}</p>` : ""}
         ${entry.notes ? `<p>${safeText(entry.notes)}</p>` : ""}
         <div class="badges">${badges.map((badge) => `<span class="badge">${safeText(badge)}</span>`).join("")}</div>
       </div>
@@ -633,6 +650,8 @@ function entryFromCsv(row) {
     result: row.vysledek || null,
     points: nullableInt(row.body),
     notes: row.poznamka || null,
+    ...normalizeKit({ event_type: eventType, sport: row.sport, role: row.role,
+      jersey_color: row.dres_barva, shorts_color: row.trenky_barva, socks_color: row.stulpny_barva }),
   };
 }
 
@@ -727,6 +746,9 @@ function exportEntries() {
       vysledek: entry.result || "",
       body: entry.points ?? "",
       poznamka: entry.notes || "",
+      dres_barva: entry.jersey_color || "",
+      trenky_barva: entry.shorts_color || "",
+      stulpny_barva: entry.socks_color || "",
     }));
 
   downloadCsv("sportovni_denik.csv", ENTRY_CSV_HEADERS, rows);
@@ -778,7 +800,10 @@ function bindEvents() {
   );
 
   $("#entry-form").addEventListener("submit", saveEntry);
-  $("#entry-form").addEventListener("reset", () => setTimeout(resetEntryForm));
+  $("#entry-form").addEventListener("reset", () => {
+    if (resetEntryForm.running) return;
+    setTimeout(resetEntryForm);
+  });
   $("#cancel-edit-btn").addEventListener("click", resetEntryForm);
   $("#season-form").addEventListener("submit", createSeason);
 
@@ -809,6 +834,7 @@ async function init() {
     return;
   }
 
+  populateKitOptions();
   bindEvents();
   resetEntryForm();
 
