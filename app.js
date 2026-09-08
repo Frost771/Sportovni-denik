@@ -214,6 +214,7 @@ function updateEntryFormVisibility() {
   $("#decision-label").classList.toggle("hidden", sport !== "Florbal");
   $("#conceded-label").classList.toggle("hidden", sport === "Fotbal" && role === "Hráč v poli");
 
+  populateKitOptions();
   const visibleKitFields = kitFields({ event_type: eventType, sport, role });
   $("#kit-fields").classList.toggle("hidden", !visibleKitFields.length);
   for (const field of KIT_FIELDS) {
@@ -369,6 +370,7 @@ function editEntry(id) {
   state.editingId = id;
   setValue("#event-type", entry.event_type);
   setValue("#sport", entry.sport);
+  populateKitOptions();
   setValue("#event-date", entry.event_date);
   refreshSeasonSelectors();
   setValue("#season", entry.season);
