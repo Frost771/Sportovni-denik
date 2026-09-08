@@ -1,3 +1,4 @@
+import { KIT_COLORS, KIT_FIELDS, kitFields } from "./kit.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const statsState = {
@@ -117,6 +118,7 @@ function injectUi() {
     </div>
     <p id="stats-selection-note" class="muted small stats-selection-note"></p>
     <div id="stats-summary" class="stats-grid stats-summary"></div>
+    <div id="stats-kit" class="detail-grid"></div>
     <div class="stats-chart-grid">
       <article class="stats-chart-card">
         <div class="stats-chart-heading"><h3>Tréninkový čas po měsících</h3><span>hodiny</span></div>
@@ -231,6 +233,7 @@ function renderStats() {
   const sport = $stats("#stats-sport")?.value;
   const season = $stats("#stats-season")?.value;
   if (!sport || !season) {
+    $stats("#stats-kit").innerHTML = "";
     $stats("#stats-selection-note").textContent = "Pro tento sport zatím není založená sezóna.";
     $stats("#stats-summary").innerHTML = '<div class="empty span-all">Nejsou dostupná žádná data.</div>';
     ["#stats-training-time", "#stats-match-ratings", "#stats-goals-conceded", "#stats-results"].forEach((selector) => {
@@ -289,6 +292,7 @@ function renderStats() {
     });
 
   renderResults(matches);
+  renderKitStats(matches);
 }
 
 async function loadAndRenderStats() {
@@ -338,3 +342,23 @@ async function initializeStats() {
 injectStyles();
 injectUi();
 setTimeout(initializeStats, 0);
+
+function renderKitStats(matches) {
+  const labels = { jersey_color: "Dresy", shorts_color: "Trenky", socks_color: "Štulpny" };
+  const eligible = matches.filter(entry => kitFields(entry).length);
+  const fields = $stats("#stats-sport").value === "Florbal" ? ["jersey_color"] : KIT_FIELDS;
+  const cards = fields.map(field => {
+    const rows = Object.entries(KIT_COLORS).filter(([code]) => field !== "shorts_color" || code !== "blue")
+      .map(([code, label]) => {
+        const used = eligible.filter(entry => entry[field] === code);
+        const wins = used.filter(entry => entry.result?.startsWith("Výhra")).length;
+        const clean = used.filter(entry => entry.minutes_played > 0 && entry.goals_conceded === 0).length;
+        return '<div class="stat-line"><span>' + label + '</span><strong>' + used.length +
+          '× · ' + wins + ' V · ' + clean + ' nul</strong></div>';
+      }).join("");
+    const missing = eligible.filter(entry => !entry[field]).length;
+    return '<div class="detail-card"><h3>Výstroj · ' + labels[field] + '</h3>' + rows +
+      '<p class="muted small">Neuvedeno: ' + missing + ' zápasů</p></div>';
+  });
+  $stats("#stats-kit").innerHTML = cards.join("");
+}
