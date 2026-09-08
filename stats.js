@@ -1,4 +1,4 @@
-import { KIT_COLORS, KIT_FIELDS, kitFields } from "./kit.js";
+import { KIT_COLORS, KIT_FIELDS, kitFields, kitColorOptions } from "./kit.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const statsState = {
@@ -39,6 +39,11 @@ function injectStyles() {
   style.id = "stats-module-styles";
   style.textContent = `
     .nav-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+    #stats-kit { margin-bottom: 24px; }
+    .kit-usage { margin-top: 18px; display: grid; gap: 8px; }
+    .kit-usage-row { display: grid; grid-template-columns: 65px 1fr 30px; gap: 10px; align-items: center; }
+    .kit-usage-track { background: #eef3fb; border-radius: 5px; height: 14px; overflow: hidden; }
+    .kit-usage-bar { height: 100%; background: var(--blue); border: 1px solid #8a98ad; box-sizing: border-box; }
     .stats-filter-label { min-width: 170px; color: var(--muted); font-size: .78rem; gap: 5px; }
     .stats-filter-label select { color: var(--ink); font-size: .93rem; }
     .stats-selection-note { margin: -6px 0 16px; }
@@ -348,7 +353,7 @@ function renderKitStats(matches) {
   const eligible = matches.filter(entry => kitFields(entry).length);
   const fields = $stats("#stats-sport").value === "Florbal" ? ["jersey_color"] : KIT_FIELDS;
   const cards = fields.map(field => {
-    const rows = Object.entries(KIT_COLORS).filter(([code]) => field !== "shorts_color" || code !== "blue")
+    const rows = kitColorOptions($stats("#stats-sport").value, field)
       .map(([code, label]) => {
         const used = eligible.filter(entry => entry[field] === code);
         const wins = used.filter(entry => entry.result?.startsWith("Výhra")).length;
@@ -356,9 +361,16 @@ function renderKitStats(matches) {
         return '<div class="stat-line"><span>' + label + '</span><strong>' + used.length +
           '× · ' + wins + ' V · ' + clean + ' ' + (clean === 1 ? 'čisté konto' : clean >= 2 && clean <= 4 ? 'čistá konta' : 'čistých kont') + '</strong></div>';
       }).join("");
+    const colors = kitColorOptions($stats("#stats-sport").value, field);
+    const counts = colors.map(([code]) => eligible.filter(entry => entry[field] === code).length);
+    const max = Math.max(1, ...counts);
+    const swatches = { white: "#fff", black: "#222", blue: "#2563eb", yellow: "#facc15", red: "#ef4444" };
+    const chart = '<div class="kit-usage" aria-label="Počet použití"><strong>Počet použití</strong>' + colors.map(([code, label], i) =>
+      '<div class="kit-usage-row"><span>' + label + '</span><div class="kit-usage-track"><div class="kit-usage-bar" style="width:' + (counts[i] / max * 100) + '%;background:' + swatches[code] + '"></div></div><strong>' + counts[i] + '×</strong></div>'
+    ).join("") + '</div>';
     const missing = eligible.filter(entry => !entry[field]).length;
     return '<div class="detail-card"><h3>Výstroj · ' + labels[field] + '</h3>' + rows +
-      '<p class="muted small">Neuvedeno: ' + missing + ' ' + (missing === 1 ? 'zápas' : missing >= 2 && missing <= 4 ? 'zápasy' : 'zápasů') + '</p></div>';
+      '<p class="muted small">Neuvedeno: ' + missing + ' ' + (missing === 1 ? 'zápas' : missing >= 2 && missing <= 4 ? 'zápasy' : 'zápasů') + '</p>' + chart + '</div>';
   });
   $stats("#stats-kit").innerHTML = cards.join("");
 }
