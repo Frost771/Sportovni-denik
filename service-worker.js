@@ -1,10 +1,11 @@
-const CACHE = "sportovni-denik-v5-match-kit";
+const CACHE = "sportovni-denik-v6-theme-surface";
 
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./theme.js",
   "./kit.js",
   "./stats.js?v=1",
   "./config.js",
