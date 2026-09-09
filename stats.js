@@ -384,10 +384,13 @@ function renderKitStats(matches) {
     const rows = kitColorOptions($stats("#stats-sport").value, field)
       .map(([code, label]) => {
         const used = eligible.filter(entry => entry[field] === code);
+        const rated = used.map(e => e.opponent_difficulty).filter(n => Number.isInteger(n) && n >= 1 && n <= 5);
+        const difficulty = rated.length ? (rated.reduce((sum,n) => sum+n,0)/rated.length).toFixed(2).replace(".", ",") + "/5" : "—";
+        const context = '<div class="muted small">Průměrná obtížnost soupeřů: ' + difficulty + ' · hodnoceno ' + rated.length + ' z ' + used.length + '</div>';
         const wins = used.filter(entry => entry.result?.startsWith("Výhra")).length;
         const clean = used.filter(entry => entry.minutes_played > 0 && entry.goals_conceded === 0).length;
         return '<div class="stat-line"><span>' + label + '</span><strong>' + used.length +
-          '× · ' + wins + ' V · ' + clean + ' ' + (clean === 1 ? 'čisté konto' : clean >= 2 && clean <= 4 ? 'čistá konta' : 'čistých kont') + '</strong></div>';
+          '× · ' + wins + ' V · ' + clean + ' ' + (clean === 1 ? 'čisté konto' : clean >= 2 && clean <= 4 ? 'čistá konta' : 'čistých kont') + '</strong></div>' + context;
       }).join("");
     const colors = kitColorOptions($stats("#stats-sport").value, field);
     const counts = colors.map(([code]) => eligible.filter(entry => entry[field] === code).length);
