@@ -1,3 +1,5 @@
+import { KIT_FIELDS, kitFields, kitColorOptions } from "./kit.js";
+
 const seasonReportState = {
   client: null,
   clientPromise: null,
@@ -64,6 +66,13 @@ function injectSeasonReportStyles() {
   const style = document.createElement("style");
   style.id = "season-report-styles";
   style.textContent = `
+    .season-report-kit-color { margin: 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .season-report-card h5 { font-size: .9rem; margin: 12px 0 6px; }
+    .season-report-kit-color p { margin: 8px 0 0; }
+    .season-report-kit-chart { display: grid; gap: 9px; }
+    .season-report-kit-bar { display: grid; grid-template-columns: 65px minmax(0, 1fr) 35px; gap: 10px; align-items: center; }
+    .season-report-kit-track { height: 14px; background: var(--line); border-radius: 5px; overflow: hidden; }
+    .season-report-kit-track > div { height: 100%; box-sizing: border-box; border: 1px solid #8a98ad; }
     .season-report-button {
       white-space: nowrap;
     }
@@ -932,6 +941,47 @@ function buildMatchTypeCards(matches, sport) {
     .join("");
 }
 
+
+function buildSeasonReportKit(matches, sport) {
+  const eligible = matches.filter(entry => kitFields(entry).length);
+  const fields = sport === "Florbal" ? ["jersey_color"] : KIT_FIELDS;
+  const labels = { jersey_color: "Dresy", shorts_color: "Trenky", socks_color: "Štulpny" };
+  const swatches = { white: "#fff", black: "#222", blue: "#2563eb", yellow: "#facc15", red: "#ef4444" };
+  const cards = fields.map(field => {
+    const colors = kitColorOptions(sport, field);
+    const groups = colors.map(([code, label]) => ({
+      code, label, entries: eligible.filter(entry => entry[field] === code)
+    }));
+    const maximum = Math.max(1, ...groups.map(group => group.entries.length));
+    const rows = groups.map(({ label, entries: used }) => {
+      const ratings = used.map(entry => entry.rating).filter(value => Number.isFinite(value) && value >= 1 && value <= 10);
+      const difficulty = used.map(entry => entry.opponent_difficulty).filter(value => Number.isInteger(value) && value >= 1 && value <= 5);
+      const metric = (values, scale) => values.length ? formatSeasonReportNumber(averageSeasonReport(values), 2) + "/" + scale : "—";
+      const wins = matchResultCounts(used).wins;
+      const clean = used.filter(entry => entry.minutes_played > 0 && entry.goals_conceded === 0).length;
+      return `<div class="season-report-kit-color">
+        <h5>${escapeSeasonReportHtml(label)}</h5>
+        ${renderSeasonReportStatLines([
+          ["Použití · výhry · čistá konta", used.length + "× · " + wins + " V · " + clean],
+          ["Průměrná obtížnost soupeřů", metric(difficulty, 5)],
+          ["Průměrné hodnocení výkonu", metric(ratings, 10)]
+        ])}
+        <p class="muted small">Vyplněná obtížnost: ${difficulty.length} z ${used.length} · hodnocení výkonu: ${ratings.length} z ${used.length}</p>
+      </div>`;
+    }).join("");
+    const chart = groups.map(({ code, label, entries: used }) =>
+      `<div class="season-report-kit-bar"><span>${escapeSeasonReportHtml(label)}</span><div class="season-report-kit-track"><div style="width:${used.length / maximum * 100}%;background:${swatches[code]}"></div></div><strong>${used.length}×</strong></div>`
+    ).join("");
+    const missing = eligible.filter(entry => !entry[field]).length;
+    return `<article class="season-report-card"><h4>Výstroj · ${labels[field]}</h4>${rows}
+      <p class="muted small">Zápasy bez uvedené barvy: ${missing}</p>
+      <h5>Počet použití</h5><div class="season-report-kit-chart">${chart}</div></article>`;
+  }).join("");
+  return `<div class="season-report-section-title"><h3>Výstroj v sezóně</h3>
+    <p class="muted small">Pouze zápasy${sport === "Fotbal" ? " v roli brankáře" : ""}. Nevyplněné hodnoty se do průměrů nepočítají; obtížnost soupeřů doplňuje kontext výsledků.</p></div>
+    <div class="season-report-detail-grid">${cards}</div>`;
+}
+
 function buildSeasonReportHtml(season, entries) {
   const sortedEntries = [...entries].sort((a, b) =>
     String(a.event_date).localeCompare(String(b.event_date))
@@ -1191,6 +1241,8 @@ function buildSeasonReportHtml(season, entries) {
           `
           : ""
     }
+
+    ${buildSeasonReportKit(matches, season.sport)}
 
     <div class="season-report-section-title">
       <h3>Vývoj v sezóně</h3>
