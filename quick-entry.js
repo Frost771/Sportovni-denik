@@ -84,7 +84,7 @@ function clearEntryValues() {
   [
     "#training-type", "#duration-minutes", "#intensity", "#opponent",
     "#goals-for", "#goals-against", "#minutes-played", "#goals-conceded",
-    "#rating", "#notes", "#entry-id", "#jersey-color", "#shorts-color", "#socks-color",
+    "#opponent-difficulty", "#rating", "#notes", "#entry-id", "#jersey-color", "#shorts-color", "#socks-color",
   ].forEach((selector) => setField(selector, ""));
 
   setField("#match-type", "Soutěžní");
