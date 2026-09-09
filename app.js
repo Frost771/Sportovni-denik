@@ -32,7 +32,7 @@ const ENTRY_CSV_HEADERS = [
   "id", "typ_udalosti", "datum", "sport", "sezona", "typ_treninku",
   "typ_zapasu", "role", "delka_minuty", "narocnost", "souper", "misto",
   "nase_goly", "goly_soupere", "odehrane_minuty", "inkasovane",
-  "hodnoceni", "rozhodnuti", "vysledek", "body", "poznamka",
+  "obtiznost_soupere", "hodnoceni", "rozhodnuti", "vysledek", "body", "poznamka",
   "dres_barva", "trenky_barva", "stulpny_barva",
 ];
 
@@ -254,6 +254,13 @@ function resetEntryForm() {
   updateEntryFormVisibility();
 }
 
+function parseOpponentDifficulty(raw) {
+  if (raw == null || String(raw).trim() === "") return null;
+  const number = Number(raw);
+  if (!Number.isInteger(number) || number < 1 || number > 5) throw new Error("Obtížnost soupeře musí být 1–5.");
+  return number;
+}
+
 function buildEntryPayload() {
   const eventType = value("#event-type");
   const sport = value("#sport");
@@ -277,6 +284,7 @@ function buildEntryPayload() {
     goals_against: null,
     minutes_played: null,
     goals_conceded: null,
+    opponent_difficulty: null,
     rating: null,
     decision: null,
     result: null,
@@ -304,6 +312,7 @@ function buildEntryPayload() {
   payload.goals_for = nullableInt(value("#goals-for"));
   payload.goals_against = nullableInt(value("#goals-against"));
   payload.minutes_played = nullableInt(value("#minutes-played"));
+  payload.opponent_difficulty = parseOpponentDifficulty(value("#opponent-difficulty"));
   payload.rating = nullableInt(value("#rating"));
 
   if (
@@ -386,6 +395,7 @@ function editEntry(id) {
   setValue("#decision", entry.decision || "Základní doba");
   setValue("#minutes-played", entry.minutes_played);
   setValue("#goals-conceded", entry.goals_conceded);
+  setValue("#opponent-difficulty", entry.opponent_difficulty);
   setValue("#rating", entry.rating);
   setValue("#notes", entry.notes);
   for (const field of KIT_FIELDS) setValue("#" + field.replaceAll("_", "-"), entry[field]);
@@ -518,6 +528,7 @@ function renderRecords() {
         <h3>${safeText(title)}</h3>
         <p>${safeText(description)}</p>
         ${kitSummary(entry) ? `<div class="record-kit"><strong>Výstroj</strong><div>${safeText(kitSummary(entry))}</div></div>` : ""}
+        ${!isTraining && entry.opponent_difficulty ? `<div class="record-difficulty">Obtížnost soupeře: ${safeText(entry.opponent_difficulty)}/5</div>` : ""}
         ${entry.notes ? `<p>${safeText(entry.notes)}</p>` : ""}
         <div class="badges">${badges.map((badge) => `<span class="badge">${safeText(badge)}</span>`).join("")}</div>
       </div>
@@ -647,6 +658,7 @@ function entryFromCsv(row) {
     goals_against: nullableInt(row.goly_soupere),
     minutes_played: nullableInt(row.odehrane_minuty),
     goals_conceded: nullableInt(row.inkasovane),
+    opponent_difficulty: eventType === "Zápas" ? parseOpponentDifficulty(row.obtiznost_soupere) : null,
     rating: nullableInt(row.hodnoceni),
     decision: row.rozhodnuti || null,
     result: row.vysledek || null,
@@ -743,6 +755,7 @@ function exportEntries() {
       goly_soupere: entry.goals_against ?? "",
       odehrane_minuty: entry.minutes_played ?? "",
       inkasovane: entry.goals_conceded ?? "",
+      obtiznost_soupere: entry.opponent_difficulty ?? "",
       hodnoceni: entry.rating ?? "",
       rozhodnuti: entry.decision || "",
       vysledek: entry.result || "",
