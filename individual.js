@@ -17,7 +17,7 @@ export function individualSummary(entries) {
 
 export function individualSummaryHtml(entries, escape) {
   const summary = individualSummary(entries);
-  const time = minutes => minutes + " min";
+  const time = minutes => (minutes / 60).toLocaleString("cs-CZ", { maximumFractionDigits: 2 }) + " h";
   return '<article class="detail-card individual-summary"><h3>Florbalové individuály</h3>' +
     '<div class="stat-line"><span>Počet aktivit</span><strong>' + summary.count + '</strong></div>' +
     '<div class="stat-line"><span>Celkový čas</span><strong>' + time(summary.minutes) + '</strong></div>' +
