@@ -1,3 +1,4 @@
+import { individualSummaryHtml } from "./individual.js";
 import { KIT_FIELDS, kitFields, kitColorOptions } from "./kit.js";
 
 const seasonReportState = {
@@ -1080,6 +1081,8 @@ function buildSeasonReportHtml(season, entries) {
         ${escapeSeasonReportHtml(season.status)}
       </span>
     </article>
+
+    ${individualSummaryHtml(sortedEntries, escapeSeasonReportHtml)}
 
     <div class="stats-grid season-report-summary">
       ${[

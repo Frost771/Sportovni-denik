@@ -4,6 +4,8 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./config.js";
 
 import { KIT_FIELDS, kitFields, normalizeKit, kitSummary, populateKitOptions } from "./kit.js";
 
+import { individualSummaryHtml } from "./individual.js";
+
 const configured =
   SUPABASE_URL &&
   SUPABASE_PUBLISHABLE_KEY &&
@@ -33,7 +35,7 @@ const ENTRY_CSV_HEADERS = [
   "typ_zapasu", "role", "delka_minuty", "narocnost", "souper", "misto",
   "nase_goly", "goly_soupere", "odehrane_minuty", "inkasovane",
   "obtiznost_soupere", "hodnoceni", "rozhodnuti", "vysledek", "body", "poznamka",
-  "dres_barva", "trenky_barva", "stulpny_barva",
+  "dres_barva", "trenky_barva", "stulpny_barva", "individual",
 ];
 
 const SEASON_CSV_HEADERS = [
@@ -269,6 +271,7 @@ function buildEntryPayload() {
   if (!season) throw new Error(`Pro sport ${sport} není založená žádná sezóna.`);
 
   const payload = {
+    is_individual: $("#is-individual").checked,
     event_type: eventType,
     event_date: value("#event-date"),
     sport,
@@ -377,6 +380,7 @@ function editEntry(id) {
   if (!entry) return;
 
   state.editingId = id;
+  $("#is-individual").checked = entry.is_individual === true;
   setValue("#event-type", entry.event_type);
   setValue("#sport", entry.sport);
   populateKitOptions();
@@ -448,7 +452,7 @@ function renderDashboard() {
     ["Tréninkový čas", `${(trainingMinutes / 60).toFixed(1)} h`],
   ].map(([label, number]) => `<div class="stat-card"><span>${label}</span><strong>${number}</strong></div>`).join("");
 
-  const cards = [];
+  const cards = [individualSummaryHtml(entries, safeText)];
   for (const currentSport of ["Fotbal", "Florbal"]) {
     const sportEntries = entries.filter((entry) => entry.sport === currentSport);
     if (!sportEntries.length) continue;
@@ -519,6 +523,7 @@ function renderRecords() {
       entry.sport,
       entry.season,
       entry.event_type,
+      entry.is_individual === true ? "Individuál" : null,
       !isTraining && entry.sport === "Fotbal" ? entry.role : null,
     ].filter(Boolean);
 
@@ -643,6 +648,7 @@ function entryFromCsv(row) {
   const eventType = row.typ_udalosti;
   return {
     id: row.id || crypto.randomUUID(),
+    is_individual: ["true", "1", "ano"].includes(String(row.individual ?? "").trim().toLowerCase()),
     event_type: eventType,
     event_date: czToIso(row.datum),
     sport: row.sport,
@@ -741,6 +747,7 @@ function exportEntries() {
     .map((entry) => ({
       id: entry.id,
       typ_udalosti: entry.event_type,
+      individual: entry.is_individual === true,
       datum: dateToCz(entry.event_date),
       sport: entry.sport,
       sezona: entry.season,

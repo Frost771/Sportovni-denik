@@ -81,6 +81,7 @@ function leaveEditMode() {
 }
 
 function clearEntryValues() {
+  $quick("#is-individual").checked = false;
   [
     "#training-type", "#duration-minutes", "#intensity", "#opponent",
     "#goals-for", "#goals-against", "#minutes-played", "#goals-conceded",
@@ -126,6 +127,7 @@ function applyTemplate(template) {
 
 function fillRepeatedEntry(entry) {
   prepareForm(entry.event_type, entry.sport);
+  $quick("#is-individual").checked = entry.is_individual === true;
 
   setField("#training-type", entry.training_type);
   setField("#duration-minutes", entry.duration_minutes);

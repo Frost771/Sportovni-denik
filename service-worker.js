@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v6-theme-surface";
+const CACHE = "sportovni-denik-v7-individual";
 
 const ASSETS = [
   "./",
@@ -7,6 +7,8 @@ const ASSETS = [
   "./app.js",
   "./theme.js",
   "./kit.js",
+  "./individual.js",
+  "./quick-entry.js",
   "./stats.js?v=1",
   "./config.js",
   "./manifest.json",

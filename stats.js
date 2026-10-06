@@ -1,3 +1,4 @@
+import { individualSummaryHtml } from "./individual.js";
 import { KIT_COLORS, KIT_FIELDS, kitFields, kitColorOptions } from "./kit.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
@@ -407,7 +408,7 @@ function renderKitStats(matches) {
     return '<div class="detail-card"><h3>Výstroj · ' + labels[field] + '</h3>' + rows +
       '<p class="muted small">Neuvedeno: ' + missing + ' ' + (missing === 1 ? 'zápas' : missing >= 2 && missing <= 4 ? 'zápasy' : 'zápasů') + '</p>' + chart + '</div>';
   });
-  $stats("#stats-kit").innerHTML = cards.join("");
+  $stats("#stats-kit").innerHTML = individualSummaryHtml(statsState.entries.filter(entry => entry.sport === $stats("#stats-sport").value && entry.season === $stats("#stats-season").value), safeText) + cards.join("");
 }
 
 function comparisonSummary(entries, sport, season) {
