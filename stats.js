@@ -141,13 +141,13 @@ function injectUi() {
     <div id="stats-kit" class="detail-grid"></div>
     <div class="stats-chart-grid">
       <article class="stats-chart-card">
-        <div class="stats-chart-heading"><h3>Individuály po měsících</h3><span>počet aktivit</span></div>
+        <div class="stats-chart-heading"><h3>Florbalové individuály po měsících</h3><span>počet aktivit</span></div>
         <div id="stats-individual-count"></div>
       </article>
       <article class="stats-chart-card">
         <div class="stats-chart-heading"><h3>Čas individuálů po měsících</h3><span>hodiny</span></div>
         <div id="stats-individual-time"></div>
-        <p class="muted small">U zápasů se počítají odehrané minuty.</p>
+        <p class="muted small">Označené aktivity ze všech sportů ve vybrané sezóně. U zápasů se počítají odehrané minuty.</p>
       </article>
       <article class="stats-chart-card">
         <div class="stats-chart-heading"><h3>Tréninkový čas po měsících</h3><span>hodiny</span></div>
@@ -309,11 +309,11 @@ function renderStats() {
     return;
   }
 
-  $stats("#stats-selection-note").textContent = `Zobrazen je pouze ${sport.toLowerCase()} v sezóně ${season}.`;
+  $stats("#stats-selection-note").textContent = `Sportovní statistiky: ${sport.toLowerCase()} v sezóně ${season}. Individuály zahrnují všechny sporty ve stejné sezóně.`;
   const entries = statsState.entries
     .filter((entry) => entry.sport === sport && entry.season === season)
     .sort((a, b) => a.event_date.localeCompare(b.event_date));
-  const individualMonths = monthlyIndividuals(entries);
+  const individualMonths = monthlyIndividuals(statsState.entries.filter(entry => entry.season === season));
   const individualEmpty = "V této sezóně zatím nejsou označené individuály.";
   renderColumnChart("#stats-individual-count", individualMonths.map(row => ({
     label: monthLabel(row.month), value: row.count,
@@ -449,7 +449,7 @@ function renderKitStats(matches) {
     return '<div class="detail-card"><h3>Výstroj · ' + labels[field] + '</h3>' + rows +
       '<p class="muted small">Neuvedeno: ' + missing + ' ' + (missing === 1 ? 'zápas' : missing >= 2 && missing <= 4 ? 'zápasy' : 'zápasů') + '</p>' + chart + '</div>';
   });
-  $stats("#stats-kit").innerHTML = individualSummaryHtml(statsState.entries.filter(entry => entry.sport === $stats("#stats-sport").value && entry.season === $stats("#stats-season").value), safeText) + cards.join("");
+  $stats("#stats-kit").innerHTML = individualSummaryHtml(statsState.entries.filter(entry => entry.season === $stats("#stats-season").value), safeText) + cards.join("");
 }
 
 function comparisonSummary(entries, sport, season) {
