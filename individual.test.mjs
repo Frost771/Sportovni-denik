@@ -15,7 +15,7 @@ assert.equal(individualSummary(sample).groups[0].count,2);
 assert.deepEqual(individualSummary([]),{count:0,minutes:0,groups:[]});
 assert.equal(individualSummary([{is_individual:true,duration_minutes:null}]).minutes,0);
 assert.equal(individualSummary([{is_individual:"false",duration_minutes:90}]).count,0);
-assert.ok(individualSummaryHtml(sample,x=>x).includes("165 min"));
+assert.ok(individualSummaryHtml(sample,x=>x).includes("2,75 h"));
 const fields=new Map();
 const get=s=>{
  if(!fields.has(s)) fields.set(s,{value:"",checked:false,classList:{toggle(){},add(){},remove(){}}});
