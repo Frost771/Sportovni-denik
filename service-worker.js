@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v8-individual-months";
+const CACHE = "sportovni-denik-v9-cross-sport-individuals";
 
 const ASSETS = [
   "./",
