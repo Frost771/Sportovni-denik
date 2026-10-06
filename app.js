@@ -452,7 +452,7 @@ function renderDashboard() {
     ["Tréninkový čas", `${(trainingMinutes / 60).toFixed(1)} h`],
   ].map(([label, number]) => `<div class="stat-card"><span>${label}</span><strong>${number}</strong></div>`).join("");
 
-  const cards = [individualSummaryHtml(entries, safeText)];
+  const cards = [individualSummaryHtml(state.entries.filter(entry => season === "Vše" || entry.season === season), safeText)];
   for (const currentSport of ["Fotbal", "Florbal"]) {
     const sportEntries = entries.filter((entry) => entry.sport === currentSport);
     if (!sportEntries.length) continue;
