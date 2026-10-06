@@ -1,4 +1,4 @@
-import { individualSummaryHtml } from "./individual.js";
+import { individualSummary, individualSummaryHtml } from "./individual.js";
 import { KIT_COLORS, KIT_FIELDS, kitFields, kitColorOptions } from "./kit.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
@@ -141,6 +141,15 @@ function injectUi() {
     <div id="stats-kit" class="detail-grid"></div>
     <div class="stats-chart-grid">
       <article class="stats-chart-card">
+        <div class="stats-chart-heading"><h3>Individuály po měsících</h3><span>počet aktivit</span></div>
+        <div id="stats-individual-count"></div>
+      </article>
+      <article class="stats-chart-card">
+        <div class="stats-chart-heading"><h3>Čas individuálů po měsících</h3><span>hodiny</span></div>
+        <div id="stats-individual-time"></div>
+        <p class="muted small">U zápasů se počítají odehrané minuty.</p>
+      </article>
+      <article class="stats-chart-card">
         <div class="stats-chart-heading"><h3>Tréninkový čas po měsících</h3><span>hodiny</span></div>
         <div id="stats-training-time"></div>
       </article>
@@ -261,6 +270,30 @@ function renderResults(matches) {
   `).join("");
 }
 
+function monthlyIndividuals(entries) {
+  if (!entries.some(entry => entry.is_individual === true)) return [];
+  const buckets = new Map();
+  for (const entry of entries) {
+    const key = entry.event_date?.slice(0, 7);
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(key || "")) continue;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(entry);
+  }
+  const months = [...buckets.keys()].sort();
+  if (!months.length) return [];
+  const [year, month] = months[0].split("-").map(Number);
+  const cursor = new Date(year, month - 1, 1);
+  const rows = [];
+  while (true) {
+    const key = cursor.getFullYear() + "-" + String(cursor.getMonth() + 1).padStart(2, "0");
+    if (key > months.at(-1)) break;
+    const summary = individualSummary(buckets.get(key) || []);
+    rows.push({ month: key, count: summary.count, minutes: summary.minutes });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return rows;
+}
+
 function renderStats() {
   refreshComparisonSelectors();
   renderSeasonComparison();
@@ -270,7 +303,7 @@ function renderStats() {
     $stats("#stats-kit").innerHTML = "";
     $stats("#stats-selection-note").textContent = "Pro tento sport zatím není založená sezóna.";
     $stats("#stats-summary").innerHTML = '<div class="empty span-all">Nejsou dostupná žádná data.</div>';
-    ["#stats-training-time", "#stats-match-ratings", "#stats-goals-conceded", "#stats-results"].forEach((selector) => {
+    ["#stats-individual-count", "#stats-individual-time", "#stats-training-time", "#stats-match-ratings", "#stats-goals-conceded", "#stats-results"].forEach((selector) => {
       $stats(selector).innerHTML = '<div class="stats-chart-empty">Nejsou dostupná žádná data.</div>';
     });
     return;
@@ -280,6 +313,14 @@ function renderStats() {
   const entries = statsState.entries
     .filter((entry) => entry.sport === sport && entry.season === season)
     .sort((a, b) => a.event_date.localeCompare(b.event_date));
+  const individualMonths = monthlyIndividuals(entries);
+  const individualEmpty = "V této sezóně zatím nejsou označené individuály.";
+  renderColumnChart("#stats-individual-count", individualMonths.map(row => ({
+    label: monthLabel(row.month), value: row.count,
+  })), { emptyText: individualEmpty });
+  renderColumnChart("#stats-individual-time", individualMonths.map(row => ({
+    label: monthLabel(row.month), value: row.minutes / 60,
+  })), { decimals: 1, suffix: " h", emptyText: individualEmpty });
   const trainings = entries.filter((entry) => entry.event_type === "Trénink");
   const matches = entries.filter((entry) => entry.event_type === "Zápas");
   const goalkeeperMatches = matches.filter((entry) =>
