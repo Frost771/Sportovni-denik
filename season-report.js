@@ -983,7 +983,7 @@ function buildSeasonReportKit(matches, sport) {
     <div class="season-report-detail-grid">${cards}</div>`;
 }
 
-function buildSeasonReportHtml(season, entries) {
+function buildSeasonReportHtml(season, entries, individualEntries = entries) {
   const sortedEntries = [...entries].sort((a, b) =>
     String(a.event_date).localeCompare(String(b.event_date))
   );
@@ -1082,7 +1082,7 @@ function buildSeasonReportHtml(season, entries) {
       </span>
     </article>
 
-    ${individualSummaryHtml(sortedEntries, escapeSeasonReportHtml)}
+    ${individualSummaryHtml(individualEntries, escapeSeasonReportHtml)}
 
     <div class="stats-grid season-report-summary">
       ${[
@@ -1410,7 +1410,6 @@ async function openSeasonReport(seasonId) {
     const { data: entries, error: entriesError } = await client
       .from("sport_entries")
       .select("*")
-      .eq("sport", season.sport)
       .eq("season", season.season)
       .order("event_date", { ascending: true });
 
@@ -1418,10 +1417,11 @@ async function openSeasonReport(seasonId) {
 
     content.innerHTML = buildSeasonReportHtml(
       season,
+      (entries || []).filter(entry => entry.sport === season.sport),
       entries || []
     );
 
-    renderSeasonReportCharts(season, entries || []);
+    renderSeasonReportCharts(season, (entries || []).filter(entry => entry.sport === season.sport));
   } catch (error) {
     console.warn("Report sezóny se nepodařilo načíst.", error);
 
