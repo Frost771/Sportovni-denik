@@ -18,10 +18,10 @@ export function individualSummary(entries) {
 export function individualSummaryHtml(entries, escape) {
   const summary = individualSummary(entries);
   const time = minutes => minutes + " min";
-  return '<article class="detail-card individual-summary"><h3>Individuály</h3>' +
+  return '<article class="detail-card individual-summary"><h3>Florbalové individuály</h3>' +
     '<div class="stat-line"><span>Počet aktivit</span><strong>' + summary.count + '</strong></div>' +
     '<div class="stat-line"><span>Celkový čas</span><strong>' + time(summary.minutes) + '</strong></div>' +
-    '<p class="muted small">Volitelné označení aktivit. U zápasů se počítají odehrané minuty.</p>' +
+    '<p class="muted small">Označené aktivity ze všech sportů v dané sezóně. U zápasů se počítají odehrané minuty.</p>' +
     summary.groups.map(group => '<div class="stat-line"><span>' + escape(group.label) +
       '</span><strong>' + group.count + '× · ' + time(group.minutes) + '</strong></div>').join("") + '</article>';
 }
