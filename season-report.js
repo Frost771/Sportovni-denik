@@ -1092,7 +1092,6 @@ function buildSeasonReportHtml(season, entries, individualEntries = entries) {
         ["Účasti na utkáních", matches.length],
         ["Odchytané starty", matches.filter(isGoalkeeperStart).length],
         ["Lavička (0 minut)", participationSummary(matches).bench],
-        ["Kustod", participationSummary(matches).staff],
         [
           "Průměrné hodnocení",
           averageRating === null

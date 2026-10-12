@@ -216,7 +216,7 @@ function updateEntryFormVisibility() {
   $("#role-label").classList.toggle("hidden", sport !== "Fotbal");
   $("#decision-label").classList.toggle("hidden", sport !== "Florbal");
 
-  const onPitch = nullableInt(value("#minutes-played")) > 0 && value("#match-role") !== "Kustod";
+  const onPitch = nullableInt(value("#minutes-played")) > 0;
   $("#conceded-label").classList.toggle("hidden", !onPitch || (sport === "Fotbal" && role === "Hráč v poli"));
   populateKitOptions();
   const visibleKitFields = kitFields({ event_type: eventType, sport, role });
@@ -337,7 +337,6 @@ function buildEntryPayload() {
   }
 
   if (payload.minutes_played < 0) throw new Error("Minuty nesmí být záporné.");
-  if (payload.match_role === "Kustod" && payload.minutes_played !== 0) throw new Error("Kustod má 0 odehraných minut.");
   if (payload.minutes_played > 0 && payload.rating === null) throw new Error("U odehraného zápasu vyplň hodnocení.");
   if (isGoalkeeperStart(payload)) {
     payload.goals_conceded = nullableInt(value("#goals-conceded"));
@@ -491,7 +490,6 @@ function renderDashboard() {
       lines.push(["Účasti na utkáních", participation.attendance]);
       lines.push(["Odehrané zápasy", participation.played]);
       lines.push(["Lavička (0 minut)", participation.bench]);
-      lines.push(["Kustod", participation.staff]);
       lines.push(["Neznámé minuty", participation.unknownMinutes]);
       lines.push(["Odehrané / odchytané minuty", participation.minutes]);
       lines.push(["Bilance", `${wins} V · ${draws} R · ${losses} P`]);

@@ -1,8 +1,8 @@
 // Match attendance and time on the pitch are independent facts.
-export const MATCH_ROLES = ["Jednička", "Dvojka", "Trojka", "Kustod"];
+export const MATCH_ROLES = ["Jednička", "Dvojka", "Trojka"];
 
 export function isPlayedMatch(entry) {
-  return entry.event_type === "Zápas" && entry.match_role !== "Kustod" && Number.isFinite(entry.minutes_played) && entry.minutes_played > 0;
+  return entry.event_type === "Zápas" && Number.isFinite(entry.minutes_played) && entry.minutes_played > 0;
 }
 
 export function isGoalkeeperStart(entry) {
@@ -15,9 +15,8 @@ export function participationSummary(entries) {
     attendance: matches.length,
     played: matches.filter(isPlayedMatch).length,
     goalkeeperStarts: matches.filter(isGoalkeeperStart).length,
-    bench: matches.filter(e => e.match_role !== "Kustod" && e.minutes_played === 0).length,
-    staff: matches.filter(e => e.match_role === "Kustod").length,
-    unknownMinutes: matches.filter(e => e.match_role !== "Kustod" && !Number.isFinite(e.minutes_played)).length,
+    bench: matches.filter(e => e.minutes_played === 0).length,
+    unknownMinutes: matches.filter(e => !Number.isFinite(e.minutes_played)).length,
     minutes: matches.filter(isPlayedMatch).reduce((sum, e) => sum + e.minutes_played, 0),
   };
 }

@@ -340,7 +340,6 @@ function renderStats() {
     ["Účasti na utkáních", matches.length],
     ["Odchytané starty", matches.filter(isGoalkeeperStart).length],
     ["Lavička (0 minut)", participationSummary(matches).bench],
-    ["Kustod", participationSummary(matches).staff],
     ["Průměrné hodnocení", averageRating === null ? "—" : `${averageRating.toFixed(2).replace(".", ",")}/10`],
     ["Průměr inkasovaných", averageConceded === null ? "—" : averageConceded.toFixed(2).replace(".", ",")],
   ].map(([label, number]) => `<div class="stat-card"><span>${label}</span><strong>${number}</strong></div>`).join("");
@@ -464,7 +463,7 @@ function comparisonSummary(entries, sport, season) {
   const clean = keepers.filter(e => e.goals_conceded === 0).length;
   const wins = matches.filter(e => e.result?.startsWith("Výhra")).length;
   return {
-    matches: matches.length, played: matches.filter(isPlayedMatch).length, starts: matches.filter(isGoalkeeperStart).length, bench: participationSummary(matches).bench, staff: participationSummary(matches).staff, wins,
+    matches: matches.length, played: matches.filter(isPlayedMatch).length, starts: matches.filter(isGoalkeeperStart).length, bench: participationSummary(matches).bench, wins,
     draws: matches.filter(e => e.result === "Remíza").length,
     losses: matches.filter(e => e.result?.startsWith("Prohra")).length,
     winRate: matches.length ? wins / matches.length * 100 : null,
@@ -511,7 +510,7 @@ function renderSeasonComparison() {
   if (a === b) { container.innerHTML = '<p class="empty">Vyber dvě různé sezóny.</p>'; return; }
   const left = comparisonSummary(statsState.entries,sport,a), right = comparisonSummary(statsState.entries,sport,b);
   const metrics = [
-    ["matches","Účasti na utkáních",0,""],["played","Odehrané zápasy",0,""],["starts","Odchytané starty",0,""],["bench","Lavička (0 minut)",0,""],["staff","Kustod",0,""],["wins","Výhry",0,""],["draws","Remízy",0,""],["losses","Prohry",0,""],
+    ["matches","Účasti na utkáních",0,""],["played","Odehrané zápasy",0,""],["starts","Odchytané starty",0,""],["bench","Lavička (0 minut)",0,""],["wins","Výhry",0,""],["draws","Remízy",0,""],["losses","Prohry",0,""],
     ["winRate","Podíl výher",1,"%"],["keepers","Brankářské zápasy s údaji",0,""],
     ["clean","Čistá konta",0,""],["cleanRate","Podíl čistých kont",1,"%"],
     ["conceded","Inkasované góly / brankářský zápas",2,""],

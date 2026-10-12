@@ -64,7 +64,6 @@ function buildCard(sport, type, matches) {
     statLine("Účasti na utkáních", matches.length),
     statLine("Odehrané zápasy", participationSummary(matches).played),
     statLine("Lavička (0 minut)", participationSummary(matches).bench),
-    statLine("Kustod", participationSummary(matches).staff),
     statLine("Bilance", `${wins} V · ${draws} R · ${losses} P`),
   ];
 
