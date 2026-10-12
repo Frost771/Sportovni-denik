@@ -134,6 +134,9 @@ function fillRepeatedEntry(entry) {
   setField("#intensity", entry.intensity);
   setField("#match-type", entry.match_type || "Soutěžní");
   setField("#role", entry.role || "Brankář");
+  setField("#match-role", entry.match_role);
+  setField("#team", entry.team);
+  setField("#competition", entry.competition);
   setField("#opponent", entry.opponent);
   setField("#venue", entry.venue || "Doma");
   setField("#goals-for", entry.goals_for);
@@ -262,3 +265,4 @@ function injectQuickUi() {
 
 injectQuickStyles();
 injectQuickUi();
+

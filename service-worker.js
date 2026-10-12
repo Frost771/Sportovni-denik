@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v9-cross-sport-individuals";
+const CACHE = "sportovni-denik-v10-match-participation";
 
 const ASSETS = [
   "./",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./theme.js",
   "./kit.js",
   "./individual.js",
+  "./match-participation.js",
   "./quick-entry.js",
   "./stats.js?v=1",
   "./config.js",
@@ -151,3 +152,4 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+

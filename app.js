@@ -1,3 +1,4 @@
+import { MATCH_ROLES, isPlayedMatch, isGoalkeeperStart, participationSummary, matchMetadataFromCsv, matchMetadataToCsv } from "./match-participation.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import Papa from "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./config.js";
@@ -35,7 +36,7 @@ const ENTRY_CSV_HEADERS = [
   "typ_zapasu", "role", "delka_minuty", "narocnost", "souper", "misto",
   "nase_goly", "goly_soupere", "odehrane_minuty", "inkasovane",
   "obtiznost_soupere", "hodnoceni", "rozhodnuti", "vysledek", "body", "poznamka",
-  "dres_barva", "trenky_barva", "stulpny_barva", "individual",
+  "dres_barva", "trenky_barva", "stulpny_barva", "individual", "role_na_utkani", "tym", "soutez",
 ];
 
 const SEASON_CSV_HEADERS = [
@@ -214,8 +215,9 @@ function updateEntryFormVisibility() {
   $("#match-fields").classList.toggle("hidden", eventType !== "Zápas");
   $("#role-label").classList.toggle("hidden", sport !== "Fotbal");
   $("#decision-label").classList.toggle("hidden", sport !== "Florbal");
-  $("#conceded-label").classList.toggle("hidden", sport === "Fotbal" && role === "Hráč v poli");
 
+  const onPitch = nullableInt(value("#minutes-played")) > 0;
+  $("#conceded-label").classList.toggle("hidden", !onPitch || (sport === "Fotbal" && role === "Hráč v poli"));
   populateKitOptions();
   const visibleKitFields = kitFields({ event_type: eventType, sport, role });
   $("#kit-fields").classList.toggle("hidden", !visibleKitFields.length);
@@ -279,6 +281,9 @@ function buildEntryPayload() {
     training_type: null,
     match_type: null,
     role: null,
+    match_role: null,
+    team: null,
+    competition: null,
     duration_minutes: null,
     intensity: null,
     opponent: null,
@@ -309,6 +314,10 @@ function buildEntryPayload() {
   }
 
   payload.match_type = value("#match-type");
+  payload.match_role = value("#match-role") || null;
+  payload.team = value("#team").trim() || null;
+  payload.competition = value("#competition").trim() || null;
+  if (payload.match_role && !MATCH_ROLES.includes(payload.match_role)) throw new Error("Neplatná role na utkání.");
   payload.role = sport === "Fotbal" ? value("#role") : "Brankář";
   payload.opponent = value("#opponent").trim();
   payload.venue = value("#venue");
@@ -322,13 +331,14 @@ function buildEntryPayload() {
     !payload.opponent ||
     payload.goals_for === null ||
     payload.goals_against === null ||
-    payload.minutes_played === null ||
-    payload.rating === null
+    payload.minutes_played === null
   ) {
-    throw new Error("U zápasu vyplň soupeře, skóre, minuty a hodnocení.");
+    throw new Error("U zápasu vyplň soupeře, skóre a minuty.");
   }
 
-  if (!(sport === "Fotbal" && payload.role === "Hráč v poli")) {
+  if (payload.minutes_played < 0) throw new Error("Minuty nesmí být záporné.");
+  if (payload.minutes_played > 0 && payload.rating === null) throw new Error("U odehraného zápasu vyplň hodnocení.");
+  if (isGoalkeeperStart(payload)) {
     payload.goals_conceded = nullableInt(value("#goals-conceded"));
     if (payload.goals_conceded === null) throw new Error("Vyplň počet inkasovaných gólů.");
   }
@@ -392,6 +402,9 @@ function editEntry(id) {
   setValue("#intensity", entry.intensity);
   setValue("#match-type", entry.match_type || "Soutěžní");
   setValue("#role", entry.role || "Brankář");
+  setValue("#match-role", entry.match_role);
+  setValue("#team", entry.team);
+  setValue("#competition", entry.competition);
   setValue("#opponent", entry.opponent);
   setValue("#venue", entry.venue || "Doma");
   setValue("#goals-for", entry.goals_for);
@@ -473,25 +486,30 @@ function renderDashboard() {
       const losses = sportMatches.filter((entry) => entry.result?.startsWith("Prohra")).length;
       const competitive = sportMatches.filter((entry) => (entry.match_type || "Soutěžní") === "Soutěžní");
       const points = competitive.reduce((sum, entry) => sum + (entry.points || 0), 0);
-      lines.push(["Zápasy", sportMatches.length]);
+      const participation = participationSummary(sportMatches);
+      lines.push(["Účasti na utkáních", participation.attendance]);
+      lines.push(["Odehrané zápasy", participation.played]);
+      lines.push(["Lavička (0 minut)", participation.bench]);
+      lines.push(["Neznámé minuty", participation.unknownMinutes]);
+      lines.push(["Odehrané / odchytané minuty", participation.minutes]);
       lines.push(["Bilance", `${wins} V · ${draws} R · ${losses} P`]);
       lines.push(["Soutěžní body", points]);
 
-      const goalkeeperMatches = sportMatches.filter((entry) => (entry.role || "Brankář") === "Brankář");
+      const goalkeeperMatches = sportMatches.filter(isGoalkeeperStart);
       if (goalkeeperMatches.length) {
-        const conceded = goalkeeperMatches.reduce((sum, entry) => sum + (entry.goals_conceded || 0), 0);
+        const knownConceded = goalkeeperMatches.map(entry => entry.goals_conceded).filter(Number.isFinite);
         const cleanSheets = goalkeeperMatches.filter((entry) => entry.goals_conceded === 0).length;
-        lines.push(["Brankářské zápasy", goalkeeperMatches.length]);
-        lines.push(["Průměr inkasovaných", (conceded / goalkeeperMatches.length).toFixed(2)]);
+        lines.push(["Odchytané starty", goalkeeperMatches.length]);
+        lines.push(["Průměr inkasovaných", knownConceded.length ? average(knownConceded).toFixed(2) : "—"]);
         lines.push(["Čistá konta", cleanSheets]);
       }
 
       if (currentSport === "Fotbal") {
-        const fieldMatches = sportMatches.filter((entry) => entry.role === "Hráč v poli");
+        const fieldMatches = sportMatches.filter((entry) => entry.role === "Hráč v poli" && isPlayedMatch(entry));
         if (fieldMatches.length) lines.push(["Zápasy v poli", fieldMatches.length]);
       }
 
-      lines.push(["Průměrné hodnocení", `${average(sportMatches.map((entry) => entry.rating)).toFixed(2)}/10`]);
+      lines.push(["Průměrné hodnocení", `${average(sportMatches.filter(isPlayedMatch).map((entry) => entry.rating)).toFixed(2)}/10`]);
     }
 
     cards.push(`<div class="detail-card"><h3>${currentSport}</h3>${lines.map(([label, number]) => `<div class="stat-line"><span>${label}</span><strong>${number}</strong></div>`).join("")}</div>`);
@@ -517,12 +535,15 @@ function renderRecords() {
       : `${entry.opponent} · ${entry.goals_for}:${entry.goals_against}`;
     const description = isTraining
       ? `${entry.duration_minutes} min · náročnost ${entry.intensity}/10`
-      : `${entry.match_type || "Soutěžní"} · ${entry.result} · ${entry.points ?? "bez"} bodů · hodnocení ${entry.rating}/10`;
+      : `${entry.match_type || "Soutěžní"} · ${entry.result} · ${entry.points ?? "bez"} bodů · ${entry.minutes_played ?? "neuvedeno"} min · hodnocení ${entry.rating == null ? "neuvedeno" : entry.rating + "/10"}`;
 
     const badges = [
       entry.sport,
       entry.season,
       entry.event_type,
+      !isTraining ? entry.match_role : null,
+      !isTraining ? entry.team : null,
+      !isTraining ? entry.competition : null,
       entry.is_individual === true ? "Individuál" : null,
       !isTraining && entry.sport === "Fotbal" ? entry.role : null,
     ].filter(Boolean);
@@ -656,6 +677,7 @@ function entryFromCsv(row) {
     training_type: row.typ_treninku || null,
     match_type: row.typ_zapasu || null,
     role: row.role || null,
+    ...matchMetadataFromCsv(row),
     duration_minutes: nullableInt(row.delka_minuty),
     intensity: nullableInt(row.narocnost),
     opponent: row.souper || null,
@@ -754,6 +776,7 @@ function exportEntries() {
       typ_treninku: entry.training_type || "",
       typ_zapasu: entry.match_type || "",
       role: entry.role || "",
+      ...matchMetadataToCsv(entry),
       delka_minuty: entry.duration_minutes ?? "",
       narocnost: entry.intensity ?? "",
       souper: entry.opponent || "",
@@ -817,7 +840,7 @@ function bindEvents() {
   $("#logout-btn").addEventListener("click", () => supabase.auth.signOut());
   $$(".nav-tabs button").forEach((button) => button.addEventListener("click", () => showPage(button.dataset.page)));
 
-  ["#event-type", "#sport", "#role", "#decision", "#goals-for", "#goals-against"].forEach((selector) =>
+  ["#event-type", "#sport", "#role", "#decision", "#goals-for", "#goals-against", "#minutes-played", "#match-role"].forEach((selector) =>
     $(selector).addEventListener("change", updateEntryFormVisibility)
   );
 
@@ -879,3 +902,4 @@ async function init() {
 }
 
 init();
+
