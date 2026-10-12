@@ -3,6 +3,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import { individualSummary, individualSummaryHtml } from "./individual.js";
 import { KIT_FIELDS, normalizeKit } from "./kit.js";
+import * as participation from "./match-participation.js";
 const sample = [
  {event_type:"Trénink",sport:"Florbal",training_type:"Lokotka",duration_minutes:90,is_individual:true},
  {event_type:"Trénink",sport:"Florbal",training_type:"Lokotka",duration_minutes:30,is_individual:true},
@@ -21,7 +22,7 @@ const get=s=>{
  if(!fields.has(s)) fields.set(s,{value:"",checked:false,classList:{toggle(){},add(){},remove(){}}});
  return fields.get(s);
 };
-const context={KIT_FIELDS,normalizeKit,SUPABASE_URL:"",SUPABASE_PUBLISHABLE_KEY:"",document:{querySelector:get},crypto:globalThis.crypto};
+const context={...participation,KIT_FIELDS,normalizeKit,SUPABASE_URL:"",SUPABASE_PUBLISHABLE_KEY:"",document:{querySelector:get},crypto:globalThis.crypto};
 vm.createContext(context);
 const source=fs.readFileSync(new URL("./app.js",import.meta.url),"utf8").replace(/^import .*;\r?\n/gm,"").replace(/init\(\);\s*$/,"");
 vm.runInContext(source,context);
@@ -34,4 +35,5 @@ assert.equal(context.entryFromCsv({typ_udalosti:"Trénink",datum:"06.10.2026"}).
 for(const individual of ["true","1","ano"]) assert.equal(context.entryFromCsv({typ_udalosti:"Trénink",datum:"06.10.2026",individual}).is_individual,true);
 assert.equal(context.entryFromCsv({typ_udalosti:"Trénink",datum:"06.10.2026",individual:"false"}).is_individual,false);
 console.log("PASS: individual totals, match time, legacy entries, checkbox payload and CSV compatibility");
+
 

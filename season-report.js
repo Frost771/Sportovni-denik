@@ -1,3 +1,4 @@
+import { isPlayedMatch, isGoalkeeperStart, participationSummary } from "./match-participation.js";
 import { individualSummaryHtml } from "./individual.js";
 import { KIT_FIELDS, kitFields, kitColorOptions } from "./kit.js";
 
@@ -758,13 +759,7 @@ function matchResultCounts(matches) {
 }
 
 function goalkeeperSeasonMatches(matches, sport) {
-  return matches.filter((entry) => {
-    const isGoalkeeper =
-      sport === "Florbal" ||
-      (entry.role || "Brankář") === "Brankář";
-
-    return isGoalkeeper;
-  });
+  return matches.filter(isGoalkeeperStart);
 }
 
 function advancedGoalkeeperValue(stats, key) {
@@ -884,7 +879,7 @@ function buildMatchTypeCards(matches, sport) {
       const typeMatches = grouped.get(type) || [];
       const result = matchResultCounts(typeMatches);
       const ratings = averageSeasonReport(
-        typeMatches.map((entry) => entry.rating)
+        typeMatches.filter(isPlayedMatch).map((entry) => entry.rating)
       );
 
       const goalkeeperMatches = goalkeeperSeasonMatches(
@@ -905,7 +900,9 @@ function buildMatchTypeCards(matches, sport) {
           : null;
 
       const lines = [
-        ["Zápasy", String(typeMatches.length)],
+        ["Účasti na utkáních", String(typeMatches.length)],
+        ["Odchytané starty", String(typeMatches.filter(isGoalkeeperStart).length)],
+        ["Lavička (0 minut)", String(participationSummary(typeMatches).bench)],
         [
           "Bilance",
           `${result.wins} V · ${result.draws} R · ${result.losses} P`,
@@ -1016,7 +1013,7 @@ function buildSeasonReportHtml(season, entries, individualEntries = entries) {
   );
 
   const averageRating = averageSeasonReport(
-    matches.map((entry) => entry.rating)
+    matches.filter(isPlayedMatch).map((entry) => entry.rating)
   );
 
   const averageConceded = averageSeasonReport(
@@ -1045,7 +1042,7 @@ function buildSeasonReportHtml(season, entries, individualEntries = entries) {
     buildAdvancedGoalkeeperLines(goalkeeperMatches);
 
   const goalkeeperLines = [
-    ["Brankářské zápasy", String(goalkeeperMatches.length)],
+    ["Odchytané starty", String(goalkeeperMatches.length)],
     ["Celkem inkasovaných", String(totalConceded)],
     [
       "Průměr inkasovaných",
@@ -1092,7 +1089,10 @@ function buildSeasonReportHtml(season, entries, individualEntries = entries) {
           "Tréninkový čas",
           `${formatSeasonReportNumber(trainingMinutes / 60, 1)} h`,
         ],
-        ["Zápasy", matches.length],
+        ["Účasti na utkáních", matches.length],
+        ["Odchytané starty", matches.filter(isGoalkeeperStart).length],
+        ["Lavička (0 minut)", participationSummary(matches).bench],
+        ["Kustod", participationSummary(matches).staff],
         [
           "Průměrné hodnocení",
           averageRating === null
@@ -1476,3 +1476,4 @@ injectSeasonReportStyles();
 waitForSeasonReportElements();
 bindSeasonReportEvents();
 annotateAllSeasonReportButtons();
+

@@ -1,3 +1,4 @@
+import { isPlayedMatch, isGoalkeeperStart, participationSummary } from "./match-participation.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const MATCH_TYPES = ["Soutěžní", "Neregistrovaná liga", "Přátelský/přípravný"];
@@ -56,14 +57,14 @@ function buildCard(sport, type, matches) {
   const wins = matches.filter((entry) => entry.result?.startsWith("Výhra")).length;
   const draws = matches.filter((entry) => entry.result === "Remíza").length;
   const losses = matches.filter((entry) => entry.result?.startsWith("Prohra")).length;
-  const goalkeeperMatches = matches.filter((entry) => (entry.role || "Brankář") === "Brankář");
-  const conceded = goalkeeperMatches.reduce(
-    (sum, entry) => sum + (entry.goals_conceded || 0),
-    0,
-  );
+  const goalkeeperMatches = matches.filter(isGoalkeeperStart);
+  const conceded = goalkeeperMatches.map(entry => entry.goals_conceded).filter(Number.isFinite);
 
   const rows = [
-    statLine("Zápasy", matches.length),
+    statLine("Účasti na utkáních", matches.length),
+    statLine("Odehrané zápasy", participationSummary(matches).played),
+    statLine("Lavička (0 minut)", participationSummary(matches).bench),
+    statLine("Kustod", participationSummary(matches).staff),
     statLine("Bilance", `${wins} V · ${draws} R · ${losses} P`),
   ];
 
@@ -73,12 +74,12 @@ function buildCard(sport, type, matches) {
   }
 
   if (goalkeeperMatches.length) {
-    rows.push(statLine("Brankářské zápasy", goalkeeperMatches.length));
-    rows.push(statLine("Průměr inkasovaných", (conceded / goalkeeperMatches.length).toFixed(2)));
+    rows.push(statLine("Odchytané starty", goalkeeperMatches.length));
+    rows.push(statLine("Průměr inkasovaných", conceded.length ? average(conceded).toFixed(2) : "—"));
     rows.push(statLine("Čistá konta", goalkeeperMatches.filter((entry) => entry.goals_conceded === 0).length));
   }
 
-  rows.push(statLine("Průměrné hodnocení", `${average(matches.map((entry) => entry.rating)).toFixed(2)}/10`));
+  rows.push(statLine("Průměrné hodnocení", `${average(matches.filter(isPlayedMatch).map((entry) => entry.rating)).toFixed(2)}/10`));
 
   return `<div class="detail-card"><h3>${sport} · ${type}</h3>${rows.join("")}</div>`;
 }
@@ -103,7 +104,7 @@ async function renderMatchTypeBreakdown() {
   const client = await getMatchTypeClient();
   const { data, error } = await client
     .from("sport_entries")
-    .select("sport, season, match_type, role, result, points, goals_conceded, rating")
+    .select("sport, season, event_type, match_type, role, match_role, minutes_played, result, points, goals_conceded, rating")
     .eq("event_type", "Zápas");
 
   if (sequence !== renderSequence) return;
@@ -177,3 +178,4 @@ if (document.readyState === "loading") {
 } else {
   bindMatchTypeStats();
 }
+

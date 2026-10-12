@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import { KIT_FIELDS, kitFields, normalizeKit, kitSummary } from "./kit.js";
+import * as participation from "./match-participation.js";
 const football = {event_type:"Zápas",sport:"Fotbal",role:"Brankář",jersey_color:"blue",shorts_color:"black",socks_color:"blue"};
 assert.equal(kitFields(football).length,3);
 assert.deepEqual(normalizeKit(football),{jersey_color:"blue",shorts_color:"black",socks_color:"blue"});
@@ -17,7 +18,7 @@ const get=selector=>{
  if(!fields.has(selector))fields.set(selector,{value:"",classList:{toggle(){},add(){},remove(){}},closest(){return {classList:{toggle(){}}}}});
  return fields.get(selector);
 };
-const context={KIT_FIELDS,kitFields,normalizeKit,kitSummary,populateKitOptions(){},SUPABASE_URL:"",SUPABASE_PUBLISHABLE_KEY:"",document:{querySelector:get,querySelectorAll:()=>[]},crypto:globalThis.crypto,console};
+const context={...participation,KIT_FIELDS,kitFields,normalizeKit,kitSummary,populateKitOptions(){},SUPABASE_URL:"",SUPABASE_PUBLISHABLE_KEY:"",document:{querySelector:get,querySelectorAll:()=>[]},crypto:globalThis.crypto,console};
 vm.createContext(context);
 const source=fs.readFileSync(new URL("./app.js",import.meta.url),"utf8").replace(/^import .*;\r?\n/gm,"").replace(/init\(\);\s*$/,"");
 vm.runInContext(source,context);
@@ -32,3 +33,4 @@ const imported=context.entryFromCsv({typ_udalosti:"Zápas",sport:"Fotbal",role:"
 assert.equal(imported.shorts_color,"black");
 assert.equal(context.entryFromCsv({typ_udalosti:"Zápas",sport:"Florbal",datum:"08.09.2026"}).jersey_color,null);
 console.log("PASS: kit eligibility, validation, match payloads, CSV compatibility");
+
