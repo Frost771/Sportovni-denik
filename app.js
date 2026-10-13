@@ -213,6 +213,7 @@ function updateEntryFormVisibility() {
 
   $("#training-fields").classList.toggle("hidden", eventType !== "Trénink");
   $("#match-fields").classList.toggle("hidden", eventType !== "Zápas");
+  $("#competition-label").classList.toggle("hidden", eventType !== "Zápas" || value("#match-type") !== "Soutěžní");
   $("#role-label").classList.toggle("hidden", sport !== "Fotbal");
   $("#decision-label").classList.toggle("hidden", sport !== "Florbal");
 
@@ -840,7 +841,7 @@ function bindEvents() {
   $("#logout-btn").addEventListener("click", () => supabase.auth.signOut());
   $$(".nav-tabs button").forEach((button) => button.addEventListener("click", () => showPage(button.dataset.page)));
 
-  ["#event-type", "#sport", "#role", "#decision", "#goals-for", "#goals-against", "#minutes-played", "#match-role"].forEach((selector) =>
+  ["#event-type", "#sport", "#role", "#match-type", "#decision", "#goals-for", "#goals-against", "#minutes-played", "#match-role"].forEach((selector) =>
     $(selector).addEventListener("change", updateEntryFormVisibility)
   );
 
