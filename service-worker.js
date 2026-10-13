@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v11-competition-visibility";
+const CACHE = "sportovni-denik-v12-preserve-selected-season";
 
 const ASSETS = [
   "./",

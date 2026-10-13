@@ -98,6 +98,7 @@ function clearEntryValues() {
 function prepareForm(eventType, sport) {
   leaveEditMode();
   clearEntryValues();
+  setField("#season", "");
   setField("#event-type", eventType);
   setField("#sport", sport);
   setField("#event-date", todayIso());
