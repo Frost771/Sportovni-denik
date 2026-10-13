@@ -24,6 +24,7 @@ const state = {
   entries: [],
   seasons: [],
   editingId: null,
+  entrySeasonSport: null,
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -190,8 +191,9 @@ function refreshSeasonSelectors() {
     : `<option value="">Nejdřív založ sezónu</option>`;
 
   const active = activeSeason(sport);
-  if (state.editingId && available.some((season) => season.season === currentEntryValue)) entrySelect.value = currentEntryValue;
+  if (state.entrySeasonSport === sport && available.some((season) => season.season === currentEntryValue)) entrySelect.value = currentEntryValue;
   else if (active) entrySelect.value = active.season;
+  state.entrySeasonSport = sport;
 
   ["#dashboard-season", "#records-season"].forEach((selector) => {
     const select = $(selector);
@@ -250,6 +252,7 @@ function resetEntryForm() {
   setValue("#event-type", "Trénink");
   setValue("#sport", "Florbal");
   setValue("#event-date", isoToday());
+  setValue("#season", "");
   setValue("#match-type", "Soutěžní");
   setValue("#decision", "Základní doba");
   setValue("#role", "Brankář");
