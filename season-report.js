@@ -952,7 +952,8 @@ function buildSeasonReportKit(matches, sport) {
     }));
     const maximum = Math.max(1, ...groups.map(group => group.entries.length));
     const rows = groups.map(({ label, entries: used }) => {
-      const ratings = used.map(entry => entry.rating).filter(value => Number.isFinite(value) && value >= 1 && value <= 10);
+      const played = used.filter(isPlayedMatch);
+      const ratings = played.map(entry => entry.rating).filter(value => Number.isFinite(value) && value >= 1 && value <= 10);
       const difficulty = used.map(entry => entry.opponent_difficulty).filter(value => Number.isInteger(value) && value >= 1 && value <= 5);
       const metric = (values, scale) => values.length ? formatSeasonReportNumber(averageSeasonReport(values), 2) + "/" + scale : "—";
       const wins = matchResultCounts(used).wins;
@@ -964,7 +965,7 @@ function buildSeasonReportKit(matches, sport) {
           ["Průměrná obtížnost soupeřů", metric(difficulty, 5)],
           ["Průměrné hodnocení výkonu", metric(ratings, 10)]
         ])}
-        <p class="muted small">Vyplněná obtížnost: ${difficulty.length} z ${used.length} · hodnocení výkonu: ${ratings.length} z ${used.length}</p>
+        <p class="muted small">Vyplněná obtížnost: ${difficulty.length} z ${used.length} · hodnocení výkonu: ${ratings.length} z ${played.length}</p>
       </div>`;
     }).join("");
     const chart = groups.map(({ code, label, entries: used }) =>
@@ -1353,7 +1354,7 @@ function renderSeasonReportCharts(season, entries) {
 
   renderSeasonReportColumnChart(
     "#season-report-match-ratings",
-    matches
+    matches.filter(isPlayedMatch)
       .filter((entry) => numberOrNull(entry.rating) !== null)
       .map((entry) => ({
         label: shortSeasonReportDate(entry.event_date),

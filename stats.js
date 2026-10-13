@@ -357,7 +357,7 @@ function renderStats() {
       emptyText: "V této sezóně zatím nejsou tréninky.",
     });
 
-  renderColumnChart("#stats-match-ratings", matches
+  renderColumnChart("#stats-match-ratings", matches.filter(isPlayedMatch)
     .filter((entry) => Number.isFinite(entry.rating))
     .map((entry) => ({ label: shortDate(entry.event_date), value: entry.rating })), {
       maxValue: 10,
@@ -431,11 +431,12 @@ function renderKitStats(matches) {
         const used = eligible.filter(entry => entry[field] === code);
         const rated = used.map(e => e.opponent_difficulty).filter(n => Number.isInteger(n) && n >= 1 && n <= 5);
         const difficulty = rated.length ? (rated.reduce((sum,n) => sum+n,0)/rated.length).toFixed(2).replace(".", ",") + "/5" : "—";
-        const performanceRatings = used.map(entry => entry.rating).filter(value => Number.isFinite(value) && value >= 1 && value <= 10);
+        const played = used.filter(isPlayedMatch);
+        const performanceRatings = played.map(entry => entry.rating).filter(value => Number.isFinite(value) && value >= 1 && value <= 10);
         const performanceAverage = average(performanceRatings);
         const performance = performanceAverage === null ? "—" : performanceAverage.toFixed(2).replace(".", ",") + "/10";
         const context = '<div class="muted small">Průměrná obtížnost soupeřů: ' + difficulty + ' · hodnoceno ' + rated.length + ' z ' + used.length + '</div>' +
-          '<div class="muted small">Průměrné hodnocení výkonu: ' + performance + ' · hodnoceno ' + performanceRatings.length + ' z ' + used.length + '</div>';
+          '<div class="muted small">Průměrné hodnocení výkonu: ' + performance + ' · hodnoceno ' + performanceRatings.length + ' z ' + played.length + '</div>';
         const wins = used.filter(entry => entry.result?.startsWith("Výhra")).length;
         const clean = used.filter(entry => entry.minutes_played > 0 && entry.goals_conceded === 0).length;
         return '<div class="stat-line"><span>' + label + '</span><strong>' + used.length +
