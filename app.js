@@ -215,7 +215,10 @@ function updateEntryFormVisibility() {
 
   $("#training-fields").classList.toggle("hidden", eventType !== "Trénink");
   $("#match-fields").classList.toggle("hidden", eventType !== "Zápas");
-  $("#competition-label").classList.toggle("hidden", eventType !== "Zápas" || value("#match-type") !== "Soutěžní");
+  const floorballMatch = eventType === "Zápas" && sport === "Florbal";
+  $("#match-role-label").classList.toggle("hidden", !floorballMatch);
+  $("#team-label").classList.toggle("hidden", !floorballMatch);
+  $("#competition-label").classList.toggle("hidden", !floorballMatch || value("#match-type") !== "Soutěžní");
   $("#role-label").classList.toggle("hidden", sport !== "Fotbal");
   $("#decision-label").classList.toggle("hidden", sport !== "Florbal");
 
@@ -318,9 +321,9 @@ function buildEntryPayload() {
   }
 
   payload.match_type = value("#match-type");
-  payload.match_role = value("#match-role") || null;
-  payload.team = value("#team").trim() || null;
-  payload.competition = value("#competition").trim() || null;
+  payload.match_role = sport === "Florbal" ? (value("#match-role") || null) : null;
+  payload.team = sport === "Florbal" ? (value("#team").trim() || null) : null;
+  payload.competition = sport === "Florbal" ? (value("#competition").trim() || null) : null;
   if (payload.match_role && !MATCH_ROLES.includes(payload.match_role)) throw new Error("Neplatná role na utkání.");
   payload.role = sport === "Fotbal" ? value("#role") : "Brankář";
   payload.opponent = value("#opponent").trim();
