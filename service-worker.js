@@ -1,4 +1,4 @@
-const CACHE = "sportovni-denik-v13-played-performance-ratings";
+const CACHE = "sportovni-denik-v14-matchday";
 
 const ASSETS = [
   "./",
@@ -12,6 +12,9 @@ const ASSETS = [
   "./quick-entry.js",
   "./stats.js?v=1",
   "./config.js",
+  "./matchday/checklist.js",
+  "./matchday/checklist.css",
+  "./matchday/defaults.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

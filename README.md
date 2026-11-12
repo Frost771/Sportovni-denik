@@ -86,3 +86,22 @@ Aplikace se pak otevře samostatně jako webová aplikace.
 - Původní CSV soubory si ponech jako zálohu.
 - Pravidelně používej export CSV i z webové aplikace.
 - Do repozitáře nikdy nevkládej `service_role` klíč ani heslo.
+
+## Matchday Checklist
+
+Před nasazením spusť [matchday/setup.sql](matchday/setup.sql) v SQL Editoru **projektu Sportovního deníku**. Záložka používá jeho přihlášení a ukládá checklist do samostatné tabulky `public.matchday_checklist`. Přístup k řádku má pouze jeho vlastník. Stávající tabulky deníku zůstávají beze změny.
+
+### Přenos stávajícího checklistu
+
+1. V původním projektu Matchday Checklist vyexportuj řádek uživatele z `public.matchday_checklist` (zejména celý JSON ve sloupci `payload`). Je-li zdroj pozastavený, musí být export dostupný ze zálohy nebo z obnoveného zdrojového projektu. Zálohu ulož soukromě.
+2. V projektu Sportovního deníku najdi UUID účtu příjemce v **Authentication → Users** a ověř jeho e-mail. UUID stejného e-mailu se mezi projekty může lišit.
+3. Po spuštění schématu vlož přes SQL Editor původní JSON a UUID účtu v deníku. Přenes celý `payload`, aby se zachovaly položky, zaškrtnutí i sety.
+
+```sql
+insert into public.matchday_checklist (user_id, payload)
+values ('UUID_UCTU_V_DENIKU', $matchday$SEM_VLOZ_EXPORTOVANY_JSON$matchday$::jsonb)
+on conflict (user_id) do nothing
+returning user_id;
+```
+
+Pokud příkaz nevrátí řádek, cílový účet už checklist má. Před případným sloučením nejprve vyexportuj obě verze. Po přenosu se přihlas do deníku a ověř oba sporty, vybrané sety a odškrtnuté položky. Export ani údaje účtu nevkládej do repozitáře.

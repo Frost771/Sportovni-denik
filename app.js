@@ -134,17 +134,52 @@ function calculateMatch({ sport, matchType, goalsFor, goalsAgainst, decision, sh
   return { decision, result, points };
 }
 
+let checklist = null;
+let checklistMount = null;
+
+async function openChecklist() {
+  if (checklistMount || !state.user) return;
+  const userId = state.user.id;
+  const host = $("#matchday-checklist");
+  const root = host.shadowRoot ?? host.attachShadow({ mode: "open" });
+  const mount = {};
+  checklistMount = mount;
+  const isCurrentUser = () => checklistMount === mount && state.user?.id === userId;
+  root.textContent = "Načítám checklist…";
+  try {
+    const { mountChecklist } = await import("./matchday/checklist.js");
+    if (isCurrentUser()) checklist = mountChecklist(root, supabase, userId, isCurrentUser, showToast);
+  } catch {
+    if (!isCurrentUser()) return;
+    checklistMount = null;
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "Checklist se nepodařilo otevřít. Zkusit znovu";
+    retry.addEventListener("click", openChecklist);
+    root.replaceChildren(retry);
+  }
+}
+
 function showPage(name) {
   $$(".nav-tabs button").forEach((button) => button.classList.toggle("active", button.dataset.page === name));
   $$(".page").forEach((page) => page.classList.toggle("active", page.id === `page-${name}`));
   if (name === "dashboard") renderDashboard();
   if (name === "records") renderRecords();
   if (name === "seasons") renderSeasons();
+  if (name === "matchday") void openChecklist();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function updateAuthView(session) {
+  const previousUserId = state.user?.id;
   state.user = session?.user ?? null;
+  if (previousUserId !== state.user?.id) {
+    checklistMount = null;
+    checklist?.dispose();
+    checklist = null;
+    $("#matchday-checklist").shadowRoot?.replaceChildren();
+    if (state.user && $("#page-matchday").classList.contains("active")) void openChecklist();
+  }
   $("#auth-view").classList.toggle("hidden", !!state.user);
   $("#app-view").classList.toggle("hidden", !state.user);
   $("#user-email").textContent = state.user?.email ?? "";
@@ -844,7 +879,11 @@ function bindEvents() {
     else showToast("Účet byl založen. Zkontroluj případný potvrzovací e-mail.");
   });
 
-  $("#logout-btn").addEventListener("click", () => supabase.auth.signOut());
+  $("#logout-btn").addEventListener("click", () => {
+    if (checklist?.hasUnsavedChanges() &&
+        !confirm("Checklist obsahuje neuložené změny. Přesto se odhlásit?")) return;
+    return supabase.auth.signOut();
+  });
   $$(".nav-tabs button").forEach((button) => button.addEventListener("click", () => showPage(button.dataset.page)));
 
   ["#event-type", "#sport", "#role", "#match-type", "#decision", "#goals-for", "#goals-against", "#minutes-played", "#match-role"].forEach((selector) =>
